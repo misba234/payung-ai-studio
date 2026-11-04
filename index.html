@@ -154,6 +154,20 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
   </div>
  </section>
 
+
+ <section class="module" id="account">
+  <div class="module-head"><div class="eyebrow">ACCOUNT / CLOUD AI</div><h2>Masuk ke Payung AI Studio</h2><p>Login untuk memakai Gemini AI dan menyimpan pemakaian kredit pada akun Anda.</p></div>
+  <div class="module-card">
+   <div class="grid2">
+    <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="nama@email.com"></div>
+    <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 8 karakter"></div>
+   </div>
+   <div class="module-actions"><button class="btn primary" id="authSignIn">Masuk</button><button class="btn secondary" id="authSignUp">Daftar akun</button><button class="btn ghost" id="authSignOut" hidden>Keluar</button></div>
+   <p id="authStatus" class="notice" style="margin-top:12px">Status: belum login. Generator lokal tetap bisa digunakan tanpa akun.</p>
+   <div class="metric-grid" style="margin-top:12px"><div class="metric"><small>Akun</small><strong id="authUserLabel" style="font-size:14px">Guest</strong></div><div class="metric"><small>Kredit AI</small><strong id="authCreditLabel">—</strong></div><div class="metric"><small>AI Cloud</small><strong id="authAiLabel" style="font-size:14px">Offline</strong></div></div>
+  </div>
+ </section>
+
  <section id="generator">
   <div class="section-head"><div><div class="eyebrow">01 / CREATION WORKSPACE</div><h2>Bangun iklan cinematic Anda</h2><p>Isi detail produk dan pilih arah kreatif. Storyboard dibuat langsung di browser.</p></div><span class="pill">NO LOGIN · NO API KEY</span></div>
   <div class="workspace">
@@ -245,7 +259,7 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
     <div class="field"><label for="socialBenefit">Keunggulan / fakta produk</label><textarea id="socialBenefit" placeholder="Masukkan fakta yang benar dari produk. Hindari klaim yang belum terbukti."></textarea></div>
     <div class="field"><label for="socialTone">Gaya komunikasi</label><select id="socialTone"><option>Santai dan relatable</option><option>Review jujur dan informatif</option><option>Persuasif dan energik</option><option>Premium dan elegan</option><option>Humoris dan ringan</option></select></div>
     <div class="field"><label for="socialFormat">Format konten</label><select id="socialFormat"><option value="racun">Racun produk / curiosity hook</option><option value="keranjang">Cek keranjang kuning</option><option value="review">Spill jujur / review</option><option value="pov">POV relatable</option><option value="before">Before / after (gunakan hanya jika faktual)</option><option value="battle">Battle produk</option><option value="unboxing">Unboxing cepat</option><option value="reasons">3 alasan wajib punya</option><option value="budget">Budget challenge</option><option value="fyp">FYP starter pack</option></select></div>
-    <button class="btn primary" id="makeSocial" style="width:100%">✦ Buat script + caption + hook</button>
+    <button class="btn secondary" id="makeSocial" style="width:100%">Buat draft lokal (tanpa AI)</button><button class="btn primary" id="makeSocialAI" style="width:100%;margin-top:9px">✦ Generate dengan Gemini AI</button>
     <div class="notice" style="margin-top:12px">Tempel link produk tidak otomatis mengambil data dari marketplace. Untuk menghindari data palsu, isi nama, target, dan fakta produk secara manual. Integrasi marketplace/API dapat ditambahkan pada tahap backend.</div>
    </div>
    <div class="module-card">
@@ -299,6 +313,7 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
 </main>
 <footer><div class="container footer-inner"><span>© <span id="year"></span> Payung AI Studio. Made for creators.</span><span>Standalone HTML · Public · Free · No account required</span></div></footer>
 <div class="toast" id="toast">Tersalin ke clipboard</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const techniques = [
 ["Camera Movement","Dolly In","Kamera bergerak mendekati subjek secara halus."],["Camera Movement","Dolly Out","Kamera menjauh untuk memperlihatkan konteks adegan."],["Camera Movement","Orbit Shot","Kamera mengitari produk dengan gerakan stabil."],["Camera Movement","Tracking Shot","Kamera mengikuti gerakan subjek."],["Camera Movement","Pan Left","Kamera menggeser pandangan ke kiri."],["Camera Movement","Pan Right","Kamera menggeser pandangan ke kanan."],["Camera Movement","Tilt Up","Kamera menengadah dari bawah ke atas."],["Camera Movement","Tilt Down","Kamera bergerak dari atas ke bawah."],["Camera Movement","Crane Up","Kamera naik secara vertikal dan dramatis."],["Camera Movement","Crane Down","Kamera turun secara vertikal dan terkontrol."],["Camera Movement","Drone Flyover","Kamera udara melintasi lokasi."],
@@ -578,6 +593,82 @@ $("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value
 $("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=safeRead(METRIC_KEY,{})[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
 $("calendarStart").value=new Date().toISOString().slice(0,10);
 currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();updateVault();
+
+
+/* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + Gemini */
+const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
+const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
+const PAYUNG_WORKER_URL="https://payung-ai-studio.misbaahmed17.workers.dev";
+let payungSupabase=null, payungSession=null;
+function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
+async function payungRefreshAccount(){
+ if(!payungSupabase)return;
+ const {data:{session}}=await payungSupabase.auth.getSession();payungSession=session;
+ const logged=!!session;
+ $("authSignOut").hidden=!logged;
+ $("authUserLabel").textContent=logged?(session.user.email||"Pengguna"):"Guest";
+ $("authAiLabel").textContent=logged?"Terhubung":"Offline";
+ $("authCreditLabel").textContent="—";
+ if(logged){
+  const {data,error}=await payungSupabase.from("ai_credits").select("balance").eq("user_id",session.user.id).maybeSingle();
+  if(!error && data) $("authCreditLabel").textContent=String(data.balance);
+  else $("authCreditLabel").textContent="Belum tersedia";
+  payungStatus("Login sebagai "+session.user.email+". Kredit AI ditampilkan dari database Supabase.");
+ } else payungStatus("Belum login. Generator draft lokal tetap tersedia.");
+}
+async function payungAuthInit(){
+ if(!window.supabase?.createClient){payungStatus("Library autentikasi belum termuat. Muat ulang halaman.");return}
+ payungSupabase=window.supabase.createClient(PAYUNG_SUPABASE_URL,PAYUNG_SUPABASE_KEY);
+ payungSupabase.auth.onAuthStateChange(()=>setTimeout(payungRefreshAccount,0));
+ await payungRefreshAccount();
+}
+$("authSignIn").addEventListener("click",async()=>{
+ const email=$("authEmail").value.trim(),password=$("authPassword").value;
+ if(!email||!password){payungStatus("Isi email dan password.");return}
+ payungStatus("Sedang masuk...");
+ const {error}=await payungSupabase.auth.signInWithPassword({email,password});
+ if(error)payungStatus("Login gagal: "+error.message);else await payungRefreshAccount();
+});
+$("authSignUp").addEventListener("click",async()=>{
+ const email=$("authEmail").value.trim(),password=$("authPassword").value;
+ if(!email||password.length<8){payungStatus("Isi email valid dan password minimal 8 karakter.");return}
+ payungStatus("Mendaftarkan akun...");
+ const {data,error}=await payungSupabase.auth.signUp({email,password});
+ if(error)payungStatus("Pendaftaran gagal: "+error.message);
+ else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
+ else payungStatus("Pendaftaran diterima. Periksa email untuk verifikasi, lalu login.");
+});
+$("authSignOut").addEventListener("click",async()=>{await payungSupabase.auth.signOut();await payungRefreshAccount()});
+async function payungGenerateAI(action,prompt){
+ if(!payungSupabase){toast("Autentikasi belum siap.");return null}
+ const {data:{session}}=await payungSupabase.auth.getSession();
+ if(!session){toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null}
+ const button=$("makeSocialAI");button.disabled=true;button.textContent="Gemini sedang membuat konten...";
+ try{
+  const response=await fetch(PAYUNG_WORKER_URL+"/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Permintaan AI gagal");
+  $("authCreditLabel").textContent=String(data.credits_remaining??"—");
+  $("authAiLabel").textContent="Aktif";
+  return data.output;
+ }catch(error){toast(error.message);return null}
+ finally{button.disabled=false;button.textContent="✦ Generate dengan Gemini AI"}
+}
+$("makeSocialAI").addEventListener("click",async()=>{
+ const product=$("socialProduct").value.trim();
+ if(!product){$("socialProduct").focus();toast("Masukkan nama produk terlebih dahulu.");return}
+ const prompt=`Anda adalah creative strategist dan copywriter iklan social-commerce profesional. Buat paket konten siap produksi dalam Bahasa Indonesia.
+Produk: ${product}
+Link referensi (jangan mengarang isi link): ${$("socialLink").value.trim()||"Tidak tersedia"}
+Target audiens: ${$("socialAudience").value.trim()||"Belum ditentukan"}
+Fakta/keunggulan yang diberikan pengguna: ${$("socialBenefit").value.trim()||"Tidak diberikan; jangan mengarang spesifikasi atau klaim"}
+Format: ${socialFormats[$("socialFormat").value]?.name||"Konten social commerce"}
+Gaya komunikasi: ${$("socialTone").value}
+Buat: 3 alternatif hook, script video 20 detik dengan timestamp dan arahan visual, caption, CTA, teks overlay, serta catatan verifikasi klaim. Hindari klaim kesehatan/hasil yang tidak dibuktikan. Jika informasi tidak tersedia, tandai [PERLU VERIFIKASI].`;
+ const output=await payungGenerateAI("social-content",prompt);
+ if(output){currentSocialText="PAYUNG AI STUDIO — GEMINI AI\n\n"+output;$("socialOutput").textContent=currentSocialText;toast("Konten berhasil dibuat oleh Gemini AI.");}
+});
+payungAuthInit();
 
 $("year").textContent=new Date().getFullYear();
 renderCameraChips();renderLibrary();updateSummary();
