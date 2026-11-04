@@ -628,7 +628,7 @@ async function payungLoadWorkspace(){
   const {data,error}=await payungSupabase.from("user_workspace").select("vault,calendar,metrics").eq("user_id",payungSession.user.id).maybeSingle();
   if(error)throw error;
   if(data){localStorage.setItem(VAULT_KEY,JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(CAL_KEY,JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(METRIC_KEY,JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();}
-  else await payungSyncWorkspace();
+  else {const initial={user_id:payungSession.user.id,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});if(saveError)throw saveError;}
  }catch(e){payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil: "+e.message)}
  finally{payungWorkspaceLoading=false}
 }
