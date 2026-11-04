@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#10131d">
 <meta name="description" content="Payung AI Studio 2.1 Final — generator storyboard, template iklan, penyimpanan otomatis dan backup proyek lokal untuk prompt cinematic.">
-<title>Payung AI Studio 2.1 Final — Complete Creative Workspace</title>
+<title>Payung AI Studio 3.1 — AI Content & Cinematic Production</title>
 <style>
 :root{
   --bg:#0b0e16;--panel:#121725;--panel2:#171e2e;--line:#293247;--text:#f3f5fb;
@@ -210,7 +210,9 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
      </div>
      <div class="field"><label for="extra">Instruksi kreatif tambahan (opsional)</label><textarea id="extra" placeholder="Contoh: tampilkan bahan alami, jangan tampilkan manusia, pertahankan warna kemasan..."></textarea></div>
     </div>
-    <button class="btn primary" id="generate" style="width:100%;padding:15px">✦ Generate storyboard & prompt</button>
+    <button class="btn primary" id="generate" style="width:100%;padding:15px">✦ Generate storyboard & prompt (Lokal)</button>
+    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">✦ Generate storyboard dengan Gemini AI</button>
+    <div id="aiStoryboardOutput" class="content-output" style="margin-top:12px">Storyboard versi Gemini akan muncul di sini.</div>
    </div>
    <aside class="panel sidebar">
     <h3>Creative brief</h3><p>Ringkasan pengaturan proyek Anda.</p>
@@ -276,7 +278,9 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
   <div class="module-head"><div class="eyebrow">02 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Bangun variasi angle dari satu produk. Kalender dibuat di browser dan status posting dapat diubah kapan saja.</p></div>
   <div class="module-card">
    <div class="grid2"><div class="field"><label for="calendarProduct">Produk untuk kalender</label><input id="calendarProduct" placeholder="Nama produk"></div><div class="field"><label for="calendarStart">Tanggal mulai</label><input id="calendarStart" type="date"></div></div>
-   <button class="btn primary" id="makeCalendar" style="width:100%">Generate kalender 30 hari</button>
+   <button class="btn primary" id="makeCalendar" style="width:100%">Generate kalender 30 hari (Lokal)</button>
+   <button class="btn secondary" id="makeCalendarAI" style="width:100%;margin-top:9px">✦ Buat strategi kalender dengan Gemini AI</button>
+   <div id="calendarAIOutput" class="content-output" style="margin-top:12px">Strategi kalender AI akan muncul di sini.</div>
    <div class="module-actions"><button class="btn secondary" id="exportCalendar">Unduh kalender TXT</button><button class="btn ghost" id="resetCalendar">Atur ulang kalender</button></div>
    <div id="calendarSummary" class="note">Belum ada kalender yang dibuat.</div>
    <div class="calendar-list" id="calendarList" style="margin-top:13px"></div>
@@ -502,7 +506,7 @@ const socialFormats={
 };
 let currentSocialText="",currentCalendar=[];
 const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}};
-const safeWrite=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){toast("Penyimpanan browser penuh atau tidak tersedia.");return false}};
+const safeWrite=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));if(typeof payungSupabase!=="undefined"&&payungSupabase&&payungSession)payungSyncWorkspace();return true}catch(e){toast("Penyimpanan browser penuh atau tidak tersedia.");return false}};
 function socialTemplateCards(){const root=$("socialTemplates");if(!root)return;root.innerHTML=Object.entries(socialFormats).map(([key,v])=>`<div class="template-card"><b>${escapeHtml(v.name)}</b><span>${escapeHtml(v.angle)}</span><button type="button" data-social-template="${key}">Pakai template →</button></div>`).join("");root.querySelectorAll("[data-social-template]").forEach(b=>b.addEventListener("click",()=>{$("socialFormat").value=b.dataset.socialTemplate;$("socialTone").focus();toast("Template dipilih. Lengkapi brief produk.")}));}
 function createSocialContent(){
  const product=$("socialProduct").value.trim();if(!product){$("socialProduct").focus();toast("Masukkan nama produk terlebih dahulu.");return ""}
@@ -599,11 +603,12 @@ currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();upda
 const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
 const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
 const PAYUNG_WORKER_URL="https://payung-ai-studio.misbaahmed17.workers.dev";
-let payungSupabase=null, payungSession=null;
+let payungSupabase=null, payungSession=null, payungSyncTimer=null, payungWorkspaceLoading=false;
 function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
 async function payungRefreshAccount(){
  if(!payungSupabase)return;
  const {data:{session}}=await payungSupabase.auth.getSession();payungSession=session;
+ if(session){await payungLoadWorkspace();}
  const logged=!!session;
  $("authSignOut").hidden=!logged;
  $("authUserLabel").textContent=logged?(session.user.email||"Pengguna"):"Guest";
@@ -616,6 +621,26 @@ async function payungRefreshAccount(){
   payungStatus("Login sebagai "+session.user.email+". Kredit AI ditampilkan dari database Supabase.");
  } else payungStatus("Belum login. Generator draft lokal tetap tersedia.");
 }
+async function payungLoadWorkspace(){
+ if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
+ payungWorkspaceLoading=true;
+ try{
+  const {data,error}=await payungSupabase.from("user_workspace").select("vault,calendar,metrics").eq("user_id",payungSession.user.id).maybeSingle();
+  if(error)throw error;
+  if(data){localStorage.setItem(VAULT_KEY,JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(CAL_KEY,JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(METRIC_KEY,JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();}
+  else await payungSyncWorkspace();
+ }catch(e){payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil: "+e.message)}
+ finally{payungWorkspaceLoading=false}
+}
+async function payungSyncWorkspace(){
+ if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
+ clearTimeout(payungSyncTimer);
+ payungSyncTimer=setTimeout(async()=>{
+  const payload={user_id:payungSession.user.id,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
+  const {error}=await payungSupabase.from("user_workspace").upsert(payload,{onConflict:"user_id"});
+  if(error)payungStatus("Data tersimpan di perangkat, tetapi sinkronisasi cloud gagal: "+error.message);
+ },700);
+}
 async function payungAuthInit(){
  if(!window.supabase?.createClient){payungStatus("Library autentikasi belum termuat. Muat ulang halaman.");return}
  payungSupabase=window.supabase.createClient(PAYUNG_SUPABASE_URL,PAYUNG_SUPABASE_KEY);
@@ -623,6 +648,7 @@ async function payungAuthInit(){
  await payungRefreshAccount();
 }
 $("authSignIn").addEventListener("click",async()=>{
+ if(!payungSupabase){payungStatus("Autentikasi belum siap. Muat ulang halaman.");return}
  const email=$("authEmail").value.trim(),password=$("authPassword").value;
  if(!email||!password){payungStatus("Isi email dan password.");return}
  payungStatus("Sedang masuk...");
@@ -630,6 +656,7 @@ $("authSignIn").addEventListener("click",async()=>{
  if(error)payungStatus("Login gagal: "+error.message);else await payungRefreshAccount();
 });
 $("authSignUp").addEventListener("click",async()=>{
+ if(!payungSupabase){payungStatus("Autentikasi belum siap. Muat ulang halaman.");return}
  const email=$("authEmail").value.trim(),password=$("authPassword").value;
  if(!email||password.length<8){payungStatus("Isi email valid dan password minimal 8 karakter.");return}
  payungStatus("Mendaftarkan akun...");
@@ -638,7 +665,7 @@ $("authSignUp").addEventListener("click",async()=>{
  else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
  else payungStatus("Pendaftaran diterima. Periksa email untuk verifikasi, lalu login.");
 });
-$("authSignOut").addEventListener("click",async()=>{await payungSupabase.auth.signOut();await payungRefreshAccount()});
+$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;await payungSupabase.auth.signOut();await payungRefreshAccount()});
 async function payungGenerateAI(action,prompt){
  if(!payungSupabase){toast("Autentikasi belum siap.");return null}
  const {data:{session}}=await payungSupabase.auth.getSession();
@@ -654,6 +681,21 @@ async function payungGenerateAI(action,prompt){
  }catch(error){toast(error.message);return null}
  finally{button.disabled=false;button.textContent="✦ Generate dengan Gemini AI"}
 }
+$("generateAIStoryboard").addEventListener("click",async()=>{
+ const product=$("productName").value.trim();if(!product){toast("Isi nama produk pada brief cinematic terlebih dahulu.");return}
+ const fields=["productName","category","duration","ratio","target","style","camera","lighting","voice","music","extra"];
+ const brief=fields.map(id=>{const el=$(id);return el?`${id}: ${el.value}`:""}).filter(Boolean).join("\\n");
+ const prompt=`Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:\\n${brief}\\nBerikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
+ const output=await payungGenerateAI("storyboard",prompt);
+ if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard Gemini berhasil dibuat.")}
+});
+$("makeCalendarAI").addEventListener("click",async()=>{
+ const product=$("calendarProduct").value.trim()||$("socialProduct").value.trim();if(!product){toast("Masukkan nama produk untuk kalender.");return}
+ const start=$("calendarStart").value||new Date().toISOString().slice(0,10);
+ const prompt=`Buat strategi kalender konten 30 hari untuk produk ${product}. Mulai tanggal ${start}. Susun tabel hari/tanggal, ide konten, hook, format video, CTA, dan catatan visual. Variasikan edukasi, review jujur, POV, unboxing, demo, perbandingan faktual, FAQ, dan showcase. Jangan membuat klaim atau spesifikasi yang tidak diberikan. Tandai fakta yang harus diverifikasi.`;
+ const output=await payungGenerateAI("calendar",prompt);
+ if(output){$("calendarAIOutput").textContent=output;toast("Strategi kalender Gemini berhasil dibuat.")}
+});
 $("makeSocialAI").addEventListener("click",async()=>{
  const product=$("socialProduct").value.trim();
  if(!product){$("socialProduct").focus();toast("Masukkan nama produk terlebih dahulu.");return}
