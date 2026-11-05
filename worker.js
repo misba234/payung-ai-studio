@@ -1,12 +1,12 @@
 const SUPABASE_URL = "https://mxseekqjwyrtkmjtyjun.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
-const ALLOWED_ORIGIN = "https://misba234.github.io";
+const ALLOWED_ORIGINS = new Set(["https://misba234.github.io", "https://payung-ai-studio.misbaahmed17.workers.dev"]);
 const GEMINI_MODEL = "gemini-3.8-flash";
 const ALLOWED_ACTIONS = new Set(["social-content", "storyboard", "calendar"]);
 
 function corsHeaders(origin) {
   return {
-    "Access-Control-Allow-Origin": origin === ALLOWED_ORIGIN ? origin : ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://misba234.github.io",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Vary": "Origin"
@@ -20,7 +20,7 @@ function reply(data, status, origin) {
 }
 async function generate(request, env) {
   const origin = request.headers.get("Origin") || "";
-  if (origin !== ALLOWED_ORIGIN) return reply({ error: "Origin tidak diizinkan." }, 403, origin);
+  if (!ALLOWED_ORIGINS.has(origin)) return reply({ error: "Origin tidak diizinkan." }, 403, origin);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
   if (request.method !== "POST") return reply({ error: "Method tidak diizinkan." }, 405, origin);
   if (!env.GEMINI_API_KEY) return reply({ error: "Secret runtime GEMINI_API_KEY belum dikonfigurasi pada Worker." }, 503, origin);
