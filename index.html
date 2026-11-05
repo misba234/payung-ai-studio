@@ -602,7 +602,7 @@ currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();upda
 /* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + Gemini */
 const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
 const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
-const PAYUNG_GENERATE_URL="/generate";
+const PAYUNG_GENERATE_URL="https://payung-ai-studio.misbaahmed17.workers.dev/generate";
 let payungSupabase=null, payungSession=null, payungSyncTimer=null, payungWorkspaceLoading=false;
 function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
 async function payungRefreshAccount(){
