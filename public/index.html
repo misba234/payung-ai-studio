@@ -666,11 +666,11 @@ $("authSignUp").addEventListener("click",async()=>{
  else payungStatus("Pendaftaran diterima. Periksa email untuk verifikasi, lalu login.");
 });
 $("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;await payungSupabase.auth.signOut();await payungRefreshAccount()});
-async function payungGenerateAI(action,prompt){
+async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
  if(!payungSupabase){toast("Autentikasi belum siap.");return null}
  const {data:{session}}=await payungSupabase.auth.getSession();
  if(!session){toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null}
- const button=$("makeSocialAI");button.disabled=true;button.textContent="Gemini sedang membuat konten...";
+ const button=$(buttonId);const originalLabel=button?.textContent||"";if(button){button.disabled=true;button.textContent="Gemini sedang memproses...";}
  try{
   const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
   const data=await response.json();
@@ -679,21 +679,21 @@ async function payungGenerateAI(action,prompt){
   $("authAiLabel").textContent="Aktif";
   return data.output;
  }catch(error){toast(error.message);return null}
- finally{button.disabled=false;button.textContent="✦ Generate dengan Gemini AI"}
+ finally{if(button){button.disabled=false;button.textContent=originalLabel}}
 }
 $("generateAIStoryboard").addEventListener("click",async()=>{
  const product=$("productName").value.trim();if(!product){toast("Isi nama produk pada brief cinematic terlebih dahulu.");return}
  const fields=["productName","category","duration","ratio","target","style","camera","lighting","voice","music","extra"];
  const brief=fields.map(id=>{const el=$(id);return el?`${id}: ${el.value}`:""}).filter(Boolean).join("\\n");
  const prompt=`Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:\\n${brief}\\nBerikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
- const output=await payungGenerateAI("storyboard",prompt);
+ const output=await payungGenerateAI("storyboard",prompt,"generateAIStoryboard");
  if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard Gemini berhasil dibuat.")}
 });
 $("makeCalendarAI").addEventListener("click",async()=>{
  const product=$("calendarProduct").value.trim()||$("socialProduct").value.trim();if(!product){toast("Masukkan nama produk untuk kalender.");return}
  const start=$("calendarStart").value||new Date().toISOString().slice(0,10);
  const prompt=`Buat strategi kalender konten 30 hari untuk produk ${product}. Mulai tanggal ${start}. Susun tabel hari/tanggal, ide konten, hook, format video, CTA, dan catatan visual. Variasikan edukasi, review jujur, POV, unboxing, demo, perbandingan faktual, FAQ, dan showcase. Jangan membuat klaim atau spesifikasi yang tidak diberikan. Tandai fakta yang harus diverifikasi.`;
- const output=await payungGenerateAI("calendar",prompt);
+ const output=await payungGenerateAI("calendar",prompt,"makeCalendarAI");
  if(output){$("calendarAIOutput").textContent=output;toast("Strategi kalender Gemini berhasil dibuat.")}
 });
 $("makeSocialAI").addEventListener("click",async()=>{
