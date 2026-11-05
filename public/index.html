@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10131d">
+<meta name="description" content="Payung AI Studio 2.1 Final — generator storyboard, template iklan, penyimpanan otomatis dan backup proyek lokal untuk prompt cinematic.">
+<title>Payung AI Studio 3.1 — AI Content & Cinematic Production</title>
+<style>
+:root{
+  --bg:#0b0e16;--panel:#121725;--panel2:#171e2e;--line:#293247;--text:#f3f5fb;
+  --muted:#9ca8bd;--accent:#a78bfa;--accent2:#6ee7d8;--gold:#f6c978;--danger:#ff8b9b;
+  --shadow:0 18px 55px rgba(0,0,0,.28);--radius:20px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 15% -10%,rgba(124,92,220,.18),transparent 38%),radial-gradient(ellipse at 100% 20%,rgba(50,180,170,.09),transparent 30%),var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.container{width:min(1180px,calc(100% - 36px));margin:auto}
+header{position:sticky;top:0;z-index:20;background:rgba(11,14,22,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.07)}
+.nav{height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font-weight:800;letter-spacing:.2px}
+.logo{width:40px;height:40px;border-radius:13px;background:linear-gradient(135deg,#a78bfa,#5eead4);display:grid;place-items:center;color:#10131d;font-size:21px;box-shadow:0 8px 25px rgba(167,139,250,.25)}
+.brand small{display:block;color:var(--muted);font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:700}
+.navlinks{display:flex;gap:20px;color:var(--muted);font-size:13px}
+.navlinks a{text-decoration:none}.navlinks a:hover{color:white}
+.pill{border:1px solid rgba(110,231,216,.3);color:var(--accent2);padding:7px 11px;border-radius:99px;font-size:11px;font-weight:800;letter-spacing:.7px}
+.hero{padding:62px 0 38px;display:grid;grid-template-columns:1.15fr .85fr;gap:34px;align-items:center}
+.eyebrow{color:var(--accent2);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:800;display:flex;align-items:center;gap:9px}
+.eyebrow:before{content:"";width:25px;height:1px;background:var(--accent2)}
+h1{font-size:clamp(38px,6vw,66px);line-height:1.02;letter-spacing:-2.8px;margin:18px 0}
+.gradient{background:linear-gradient(100deg,#fff 10%,#c4b5fd 53%,#6ee7d8 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:620px;color:var(--muted);font-size:16px}
+.hero-actions{display:flex;gap:11px;flex-wrap:wrap;margin-top:25px}
+.btn{border:0;border-radius:12px;padding:12px 17px;font-weight:800;transition:.2s;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.08)}
+.primary{background:linear-gradient(110deg,#a78bfa,#75e6d7);color:#10131d;box-shadow:0 10px 30px rgba(132,116,235,.22)}
+.secondary{background:#20283a;color:var(--text);border:1px solid var(--line)}
+.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.hero-art{min-height:280px;position:relative;border:1px solid var(--line);border-radius:26px;overflow:hidden;background:linear-gradient(145deg,rgba(167,139,250,.17),rgba(110,231,216,.05)),#121725;box-shadow:var(--shadow);padding:25px;display:flex;flex-direction:column;justify-content:space-between}
+.hero-art:before,.hero-art:after{content:"";position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none}
+.hero-art:before{width:210px;height:210px;right:-35px;top:-45px;background:radial-gradient(circle,rgba(167,139,250,.45),transparent 70%)}
+.hero-art:after{width:180px;height:180px;left:-60px;bottom:-90px;background:radial-gradient(circle,rgba(110,231,216,.28),transparent 70%)}
+.art-top,.art-bottom{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center}
+.art-title{position:relative;z-index:1;font-size:28px;line-height:1.1;font-weight:850;max-width:300px}
+.art-title span{color:var(--accent2)}
+.art-grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0}
+.art-grid div{height:58px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);border-radius:12px;display:grid;place-items:center;font-size:22px}
+.art-bottom{color:var(--muted);font-size:11px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:15px;margin:28px 0 17px}
+.section-head h2{font-size:23px;margin:0;letter-spacing:-.6px}
+.section-head p{margin:5px 0 0;color:var(--muted);font-size:13px}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:18px;align-items:start}
+.panel{background:linear-gradient(160deg,rgba(255,255,255,.035),transparent 45%),var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.form-panel{padding:23px}
+.sidebar{padding:20px;position:sticky;top:92px}
+.form-section{padding:0 0 22px;margin-bottom:21px;border-bottom:1px solid rgba(255,255,255,.07)}
+.form-section:last-child{border:0;margin:0;padding:0}
+.form-section h3{font-size:14px;margin:0 0 15px;display:flex;align-items:center;gap:9px}
+.step{width:25px;height:25px;border-radius:8px;background:rgba(167,139,250,.16);color:#c4b5fd;display:grid;place-items:center;font-size:11px;font-weight:900}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+label{font-size:12px;color:#cbd3e2;font-weight:700}
+input,select,textarea{width:100%;background:#0d1220;border:1px solid #303a50;border-radius:10px;color:var(--text);padding:11px 12px;outline:none;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:#9c83ef;box-shadow:0 0 0 3px rgba(167,139,250,.12)}
+textarea{resize:vertical;min-height:82px}
+.hint{font-size:11px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid #354057;background:#0d1220;color:#b8c2d5;border-radius:99px;padding:7px 10px;font-size:11px}
+.chip.active{background:rgba(167,139,250,.17);border-color:#9b83ed;color:#e4dcff}
+.upload{border:1px dashed #46516b;border-radius:12px;padding:14px;text-align:center;color:var(--muted);font-size:12px;background:#0d1220}
+.upload input{border:0;background:none;padding:8px 0 0}
+.preview{display:none;max-height:150px;max-width:100%;object-fit:contain;border-radius:9px;margin:12px auto 0}
+.sidebar h3{margin:0 0 6px;font-size:16px}
+.sidebar>p{margin:0 0 18px;color:var(--muted);font-size:12px}
+.stat{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:12px}
+.stat span{color:var(--muted)}
+.sidebar .btn{width:100%;margin-top:17px}
+.note{font-size:11px;color:var(--muted);line-height:1.5;margin-top:13px}
+.results{margin:30px 0 50px;display:none}
+.result-top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+.result-top h2{margin:0;font-size:24px}
+.result-actions{display:flex;gap:8px;flex-wrap:wrap}
+.scene-list{display:grid;gap:13px}
+.scene{background:var(--panel);border:1px solid var(--line);border-radius:17px;overflow:hidden}
+.scene-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 17px;background:rgba(255,255,255,.025);border-bottom:1px solid rgba(255,255,255,.07)}
+.scene-name{display:flex;gap:11px;align-items:center}
+.scene-num{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#a78bfa,#6ee7d8);color:#10131d;font-weight:900;display:grid;place-items:center}
+.scene-name strong{display:block;font-size:14px}
+.scene-name small{color:var(--muted);font-size:11px}
+.scene-body{padding:17px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.scene-block{background:#0d1220;border:1px solid rgba(255,255,255,.06);border-radius:11px;padding:13px}
+.scene-block h4{margin:0 0 7px;font-size:10px;color:var(--accent2);letter-spacing:1px;text-transform:uppercase}
+.scene-block p{margin:0;color:#d4dbea;font-size:12px;white-space:pre-wrap}
+.prompt-box{grid-column:1/-1}
+.prompt-text{font-size:12px;line-height:1.6;color:#dce2ef;white-space:pre-wrap}
+.copy-small{background:#222b3d;border:1px solid #38445c;color:#e6eafa;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:700}
+.full-prompt{margin-top:17px;padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:17px}
+.full-prompt-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.full-prompt h3{margin:0;font-size:15px}
+.full-prompt pre{white-space:pre-wrap;word-break:break-word;color:#d7dfef;font:12px/1.7 inherit;margin:0;max-height:390px;overflow:auto}
+.library{margin:38px 0 55px}
+.library-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.lib-card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:15px}
+.lib-card h3{margin:0 0 5px;font-size:13px}
+.lib-card p{margin:0;color:var(--muted);font-size:11px}
+.lib-card strong{color:var(--accent2);font-size:22px;display:block;margin-bottom:5px}
+.tech-controls{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0}
+.tech-controls input,.tech-controls select{max-width:260px}
+.tech-list{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tech-item{border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px;background:#101624}
+.tech-item b{display:block;font-size:11px}
+.tech-item span{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--muted);font-size:11px}
+.footer-inner{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,20px);background:#e9fff9;color:#10201e;padding:11px 17px;border-radius:10px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.25s;z-index:50;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.empty{padding:30px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:15px}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-art{min-height:230px}.workspace{grid-template-columns:1fr}.sidebar{position:static}.library-grid{grid-template-columns:repeat(2,1fr)}.tech-list{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.container{width:min(100% - 22px,1180px)}.nav{height:62px}.navlinks{display:none}.hero{padding:38px 0 24px;gap:22px}h1{letter-spacing:-1.8px}.hero p{font-size:14px}.hero-art{min-height:210px;padding:18px}.art-title{font-size:24px}.form-panel{padding:16px}.grid2{grid-template-columns:1fr;gap:0}.section-head{align-items:start;flex-direction:column}.scene-body{grid-template-columns:1fr;padding:12px}.prompt-box{grid-column:auto}.library-grid,.tech-list{grid-template-columns:1fr 1fr}.result-actions{width:100%}.result-actions .btn{flex:1}.scene-head{align-items:flex-start}.pill{font-size:9px}}
+@media print{header,.hero,.workspace,.library,footer,.result-actions,.copy-small{display:none!important}body{background:white;color:#111}.results{display:block!important}.scene,.full-prompt{break-inside:avoid;background:white;color:#111;border:1px solid #ccc}.scene-block{background:#f7f7f7}.scene-block p,.prompt-text,.full-prompt pre{color:#111}}
+
+/* Creator Suite 3.0 */
+.module{margin:38px 0 52px;scroll-margin-top:90px}.module-head{margin-bottom:17px}.module-head h2{font-size:clamp(24px,4vw,34px);margin:8px 0}.module-head p{color:var(--muted);max-width:760px;margin:0;font-size:13px}.module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.module-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}.module-card h3{margin:0 0 8px;font-size:16px}.module-card p{color:var(--muted);font-size:12px}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{border-radius:15px;padding:14px;background:#171e2e;border:1px solid var(--line)}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:23px;margin-top:5px}.content-output{white-space:pre-wrap;background:#0d1220;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:12px;line-height:1.7;max-height:420px;overflow:auto;color:#e6eafa}.template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.template-card{background:#0d1220;border:1px solid var(--line);border-radius:13px;padding:13px}.template-card b{display:block;font-size:12px}.template-card span{display:block;color:var(--muted);font-size:11px;margin:5px 0 10px}.template-card button{border:0;background:transparent;color:var(--accent2);padding:0;font-weight:800;font-size:11px}.vault-item{padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)}.vault-item:last-child{border:0}.vault-item strong{font-size:13px}.vault-item small{display:block;color:var(--muted);margin:4px 0 9px}.vault-actions{display:flex;gap:7px;flex-wrap:wrap}.calendar-list{display:grid;gap:8px}.calendar-day{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;background:#0d1220;border:1px solid var(--line);border-radius:12px;padding:11px}.calendar-day .dayno{background:rgba(167,139,250,.15);border-radius:10px;text-align:center;padding:9px 4px;font-weight:900;color:#c4b5fd}.calendar-day b{font-size:12px}.calendar-day small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.calendar-day select{max-width:145px;padding:8px;font-size:11px}.notice{border:1px solid rgba(246,201,120,.3);background:rgba(246,201,120,.07);border-radius:12px;padding:12px;color:#e8d4a9;font-size:11px;line-height:1.6}.module-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.module-actions .btn{font-size:12px;padding:9px 12px}
+@media(max-width:700px){.module-grid{grid-template-columns:1fr}.template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-grid{grid-template-columns:repeat(3,1fr)}.metric{padding:10px}.metric strong{font-size:18px}.calendar-day{grid-template-columns:48px 1fr}.calendar-day select{grid-column:2;max-width:100%;width:100%}}
+
+</style>
+</head>
+<body>
+<header>
+ <div class="container nav">
+  <a class="brand" href="#">
+   <span class="logo">✦</span><span>PAYUNG AI STUDIO<small>AI CONTENT & CINEMATIC PRODUCTION</small></span>
+  </a>
+  <nav class="navlinks"><a href="#content-engine">Content Engine</a><a href="#calendar">Kalender</a><a href="#vault">Vault</a><a href="#generator">Cinematic</a><a href="#library">99 Techniques</a></nav>
+  <span class="pill">PUBLIC · FREE</span>
+ </div>
+</header>
+<main class="container">
+ <section class="hero">
+  <div>
+   <div class="eyebrow">AI CONTENT & CINEMATIC WORKSPACE</div>
+   <h1>One product. More ideas.<br><span class="gradient">Better content.</span></h1>
+   <p>Ubah detail produk menjadi ide konten, hook, script, caption, kalender posting, storyboard, dan prompt video cinematic.</p>
+   <div class="hero-actions"><a class="btn primary" href="#generator">✦ Mulai bikin konten</a><a class="btn secondary" href="#library">Lihat content studio ↗</a></div>
+  </div>
+  <div class="hero-art">
+   <div class="art-top"><span class="pill">CREATIVE ENGINE 01</span><span style="color:var(--gold)">● LIVE WORKSPACE</span></div>
+   <div><div class="art-title">IDEA → FRAME → <span>IMPACT.</span></div><div class="art-grid"><div>🎬</div><div>📷</div><div>✨</div></div></div>
+   <div class="art-bottom"><span>STORYBOARD GENERATOR</span><span>PAYUNG AI STUDIO ©</span></div>
+  </div>
+ </section>
+
+
+ <section class="module" id="account">
+  <div class="module-head"><div class="eyebrow">ACCOUNT / CLOUD AI</div><h2>Masuk ke Payung AI Studio</h2><p>Login untuk memakai Gemini AI dan menyimpan pemakaian kredit pada akun Anda.</p></div>
+  <div class="module-card">
+   <div class="grid2">
+    <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="nama@email.com"></div>
+    <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 8 karakter"></div>
+   </div>
+   <div class="module-actions"><button class="btn primary" id="authSignIn">Masuk</button><button class="btn secondary" id="authSignUp">Daftar akun</button><button class="btn ghost" id="authSignOut" hidden>Keluar</button></div>
+   <p id="authStatus" class="notice" style="margin-top:12px">Status: belum login. Generator lokal tetap bisa digunakan tanpa akun.</p>
+   <div class="metric-grid" style="margin-top:12px"><div class="metric"><small>Akun</small><strong id="authUserLabel" style="font-size:14px">Guest</strong></div><div class="metric"><small>Kredit AI</small><strong id="authCreditLabel">—</strong></div><div class="metric"><small>AI Cloud</small><strong id="authAiLabel" style="font-size:14px">Offline</strong></div></div>
+  </div>
+ </section>
+
+ <section id="generator">
+  <div class="section-head"><div><div class="eyebrow">01 / CREATION WORKSPACE</div><h2>Bangun iklan cinematic Anda</h2><p>Isi detail produk dan pilih arah kreatif. Storyboard dibuat langsung di browser.</p></div><span class="pill">NO LOGIN · NO API KEY</span></div>
+  <div class="workspace">
+   <div class="panel form-panel">
+    <div class="form-section">
+     <h3><span class="step">01</span> Informasi produk</h3>
+     <div class="grid2">
+      <div class="field"><label for="productName">Nama produk / brand *</label><input id="productName" placeholder="Contoh: Bawang Hitam Premium"></div>
+      <div class="field"><label for="category">Kategori produk</label><select id="category"><option>Makanan dan minuman</option><option>Skincare dan kecantikan</option><option>Fashion dan aksesoris</option><option>Elektronik dan gadget</option><option>Produk kesehatan</option><option>Rumah tangga</option><option>Otomotif</option><option>Produk umum</option></select></div>
+     </div>
+     <div class="field"><label for="description">Deskripsi singkat produk</label><textarea id="description" placeholder="Jelaskan bentuk, bahan, kemasan, karakter, atau keunikan produk..."></textarea></div>
+     <div class="grid2">
+      <div class="field"><label for="usp">Keunggulan / pesan utama</label><input id="usp" placeholder="Contoh: rasa khas, kemasan praktis"></div>
+      <div class="field"><label for="cta">Call to action</label><input id="cta" value="Pesan sekarang"></div>
+     </div>
+     <div class="field"><label>Foto referensi produk (opsional)</label><div class="upload">Unggah foto untuk panduan visual saat menyusun prompt.<input id="reference" type="file" accept="image/*"><img id="preview" class="preview" alt="Pratinjau foto produk"></div><span class="hint">Foto hanya dipratinjau secara lokal. Generator tidak mengirim gambar ke server atau Google Flow.</span></div>
+    </div>
+    <div class="form-section">
+     <h3><span class="step">02</span> Format video</h3>
+     <div class="grid2">
+      <div class="field"><label for="duration">Durasi iklan</label><select id="duration"><option value="10">10 detik</option><option value="20" selected>20 detik</option><option value="30">30 detik</option></select></div>
+      <div class="field"><label for="platform">Platform / rasio</label><select id="platform"><option value="TikTok / Instagram Reels — vertical 9:16">TikTok / Reels (9:16)</option><option value="YouTube — horizontal 16:9">YouTube (16:9)</option><option value="Facebook Ads — vertical 4:5">Facebook Ads (4:5)</option><option value="Universal — square 1:1">Square (1:1)</option></select></div>
+     </div>
+     <div class="field"><label for="language">Bahasa prompt</label><select id="language"><option value="English">English (recommended for video models)</option><option value="Indonesia">Bahasa Indonesia</option></select></div>
+    </div>
+    <div class="form-section">
+     <h3><span class="step">03</span> Arah visual & sinematografi</h3>
+     <div class="grid2">
+      <div class="field"><label for="style">Gaya visual</label><select id="style"><option>Luxury cinematic</option><option>Hyper realistic commercial</option><option>Hollywood cinematic</option><option>3D product animation</option><option>Viral social media commercial</option><option>Minimalist premium</option><option>Natural lifestyle</option><option>Fantasy surreal</option><option>Documentary realism</option></select></div>
+      <div class="field"><label for="mood">Mood / suasana</label><select id="mood"><option>Premium, elegant, sophisticated</option><option>Energetic, bold, exciting</option><option>Warm, friendly, authentic</option><option>Mysterious, dramatic, intriguing</option><option>Fresh, clean, natural</option><option>Emotional, inspiring, uplifting</option></select></div>
+     </div>
+     <div class="field"><label for="lighting">Pencahayaan</label><select id="lighting"><option>Soft studio lighting with rim light</option><option>Golden hour warm sunlight</option><option>Dramatic low-key lighting</option><option>Bright high-key commercial lighting</option><option>Neon cinematic lighting</option><option>Natural window light</option><option>Volumetric light with atmospheric haze</option></select></div>
+     <div class="field"><label>Teknik kamera pilihan (pilih beberapa)</label><div class="chips" id="cameraChips"></div></div>
+    </div>
+    <div class="form-section">
+     <h3><span class="step">04</span> Pengaturan tambahan</h3>
+     <div class="grid2">
+      <div class="field"><label for="voice">Voice-over</label><select id="voice"><option>Tanpa voice-over</option><option>Narator pria, hangat dan meyakinkan</option><option>Narator wanita, elegan dan ramah</option><option>Narator energik untuk iklan sosial media</option><option>Voice-over storytelling emosional</option></select></div>
+      <div class="field"><label for="music">Musik / sound design</label><select id="music"><option>Cinematic orchestral build-up</option><option>Modern upbeat commercial</option><option>Minimal ambient and subtle sound effects</option><option>Luxury atmospheric soundscape</option><option>Playful energetic pop</option><option>Tanpa musik, sound effect saja</option></select></div>
+     </div>
+     <div class="field"><label for="extra">Instruksi kreatif tambahan (opsional)</label><textarea id="extra" placeholder="Contoh: tampilkan bahan alami, jangan tampilkan manusia, pertahankan warna kemasan..."></textarea></div>
+    </div>
+    <button class="btn primary" id="generate" style="width:100%;padding:15px">✦ Generate storyboard & prompt (Lokal)</button>
+    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">✦ Generate storyboard dengan Gemini AI</button>
+    <div id="aiStoryboardOutput" class="content-output" style="margin-top:12px">Storyboard versi Gemini akan muncul di sini.</div>
+   </div>
+   <aside class="panel sidebar">
+    <h3>Creative brief</h3><p>Ringkasan pengaturan proyek Anda.</p>
+    <div class="stat"><span>Durasi</span><b id="sumDuration">20 detik</b></div>
+    <div class="stat"><span>Jumlah adegan</span><b id="sumScenes">5 adegan</b></div>
+    <div class="stat"><span>Format</span><b id="sumRatio">9:16</b></div>
+    <div class="stat"><span>Output</span><b>Storyboard + prompts</b></div>
+    <button class="btn secondary" id="reset">↺ Reset formulir</button>
+    <div class="note">Generator menggunakan template dan aturan kreatif lokal. Aplikasi ini menyusun storyboard dan prompt, bukan merender video. Hasil AI dapat berbeda; periksa detail produk dan klaim iklan sebelum dipublikasikan.</div>
+    <div style="margin-top:20px;padding-top:17px;border-top:1px solid rgba(255,255,255,.08)">
+     <h3>Studio tools <span class="pill" style="font-size:9px;vertical-align:middle">3.0 CREATOR SUITE</span></h3>
+     <p class="note" style="margin:5px 0 12px">Pilih konsep cepat atau simpan proyek di perangkat ini.</p>
+     <div class="field"><label for="adTemplate">Template iklan siap pakai</label><select id="adTemplate">
+      <option value="">Pilih template kreatif…</option><option value="food">Food & Beverage — appetizing hero</option><option value="beauty">Skincare — clean beauty reveal</option><option value="fashion">Fashion — editorial product film</option><option value="tech">Gadget — futuristic tech launch</option><option value="home">Home & Lifestyle — warm everyday story</option>
+     </select></div>
+     <button class="btn secondary" id="applyTemplate" style="width:100%;margin:0 0 15px">Terapkan template</button>
+     <div class="field"><label for="projectName">Nama proyek</label><input id="projectName" placeholder="Contoh: Iklan Bawang Hitam"></div>
+     <button class="btn primary" id="saveProject" style="width:100%;margin:0 0 10px">Simpan proyek</button>
+     <div class="field"><label for="savedProjects">Proyek tersimpan di perangkat</label><select id="savedProjects"><option value="">Belum ada proyek tersimpan</option></select></div>
+     <div class="grid2"><button class="btn secondary" id="loadProject" style="margin:0">Muat</button><button class="btn ghost" id="deleteProject" style="margin:0">Hapus</button></div>
+     <div class="grid2" style="margin-top:10px"><button class="btn secondary" id="exportBackup" style="margin:0">↓ Backup JSON</button><button class="btn secondary" id="importBackup" style="margin:0">↑ Pulihkan JSON</button></div>
+     <input id="backupFile" type="file" accept="application/json,.json" style="display:none">
+     <div class="note">Draft otomatis disimpan di browser. Backup JSON dapat dipindahkan ke perangkat lain. Foto referensi hanya dipratinjau lokal dan tidak ikut tersimpan. Data tidak dikirim ke server.</div>
+    </div>
+   </aside>
+  </div>
+ </section>
+
+ <section class="results" id="results">
+  <div class="result-top"><div><div class="eyebrow">02 / GENERATED OUTPUT</div><h2>Storyboard Anda</h2><p style="color:var(--muted);font-size:12px;margin:5px 0 0" id="resultMeta"></p></div>
+   <div class="result-actions"><button class="btn secondary" id="copyAll">▣ Copy semua prompt</button><button class="btn secondary" id="download">↓ Download TXT</button><button class="btn ghost" id="print">Print / PDF</button></div>
+  </div>
+  <div class="scene-list" id="sceneList"></div>
+  <div class="full-prompt"><div class="full-prompt-head"><h3>Master prompt / creative direction</h3><button class="copy-small" id="copyMaster">Copy master prompt</button></div><pre id="masterPrompt"></pre></div>
+ </section>
+
+
+ <section class="module" id="content-engine">
+  <div class="module-head"><div class="eyebrow">01 / AI CONTENT ENGINE</div><h2>Satu produk, banyak ide konten.</h2><p>Masukkan detail produk, pilih format, lalu susun hook, script, caption, CTA, dan arahan visual. Mesin ini berjalan secara lokal menggunakan template kreatif—bukan AI cloud.</p></div>
+  <div class="module-grid">
+   <div class="module-card">
+    <h3>Product brief</h3>
+    <div class="field"><label for="socialProduct">Nama produk</label><input id="socialProduct" placeholder="Contoh: Glow Daily Sunscreen"></div>
+    <div class="field"><label for="socialLink">Link produk (opsional, sebagai referensi)</label><input id="socialLink" type="url" placeholder="https://shopee.co.id/... "></div>
+    <div class="field"><label for="socialAudience">Target audiens</label><input id="socialAudience" placeholder="Contoh: mahasiswa, pekerja aktif, ibu muda"></div>
+    <div class="field"><label for="socialBenefit">Keunggulan / fakta produk</label><textarea id="socialBenefit" placeholder="Masukkan fakta yang benar dari produk. Hindari klaim yang belum terbukti."></textarea></div>
+    <div class="field"><label for="socialTone">Gaya komunikasi</label><select id="socialTone"><option>Santai dan relatable</option><option>Review jujur dan informatif</option><option>Persuasif dan energik</option><option>Premium dan elegan</option><option>Humoris dan ringan</option></select></div>
+    <div class="field"><label for="socialFormat">Format konten</label><select id="socialFormat"><option value="racun">Racun produk / curiosity hook</option><option value="keranjang">Cek keranjang kuning</option><option value="review">Spill jujur / review</option><option value="pov">POV relatable</option><option value="before">Before / after (gunakan hanya jika faktual)</option><option value="battle">Battle produk</option><option value="unboxing">Unboxing cepat</option><option value="reasons">3 alasan wajib punya</option><option value="budget">Budget challenge</option><option value="fyp">FYP starter pack</option></select></div>
+    <button class="btn secondary" id="makeSocial" style="width:100%">Buat draft lokal (tanpa AI)</button><button class="btn primary" id="makeSocialAI" style="width:100%;margin-top:9px">✦ Generate dengan Gemini AI</button>
+    <div class="notice" style="margin-top:12px">Tempel link produk tidak otomatis mengambil data dari marketplace. Untuk menghindari data palsu, isi nama, target, dan fakta produk secara manual. Integrasi marketplace/API dapat ditambahkan pada tahap backend.</div>
+   </div>
+   <div class="module-card">
+    <h3>Hasil konten</h3><p>Hasil dapat disalin, disimpan ke Content Vault, atau dibagikan dari perangkat.</p>
+    <div id="socialOutput" class="content-output">Hasil generator akan muncul di sini setelah Anda membuat konten.</div>
+    <div class="module-actions"><button class="btn secondary" id="copySocial">Salin hasil</button><button class="btn primary" id="saveSocial">Simpan ke Vault</button><button class="btn ghost" id="shareSocial">Bagikan</button></div>
+   </div>
+  </div>
+  <div class="module-head" style="margin-top:24px"><h2>Viral template library</h2><p>Pilih salah satu format untuk mengisi generator secara cepat.</p></div>
+  <div class="template-grid" id="socialTemplates"></div>
+ </section>
+
+ <section class="module" id="calendar">
+  <div class="module-head"><div class="eyebrow">02 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Bangun variasi angle dari satu produk. Kalender dibuat di browser dan status posting dapat diubah kapan saja.</p></div>
+  <div class="module-card">
+   <div class="grid2"><div class="field"><label for="calendarProduct">Produk untuk kalender</label><input id="calendarProduct" placeholder="Nama produk"></div><div class="field"><label for="calendarStart">Tanggal mulai</label><input id="calendarStart" type="date"></div></div>
+   <button class="btn primary" id="makeCalendar" style="width:100%">Generate kalender 30 hari (Lokal)</button>
+   <button class="btn secondary" id="makeCalendarAI" style="width:100%;margin-top:9px">✦ Buat strategi kalender dengan Gemini AI</button>
+   <div id="calendarAIOutput" class="content-output" style="margin-top:12px">Strategi kalender AI akan muncul di sini.</div>
+   <div class="module-actions"><button class="btn secondary" id="exportCalendar">Unduh kalender TXT</button><button class="btn ghost" id="resetCalendar">Atur ulang kalender</button></div>
+   <div id="calendarSummary" class="note">Belum ada kalender yang dibuat.</div>
+   <div class="calendar-list" id="calendarList" style="margin-top:13px"></div>
+  </div>
+ </section>
+
+ <section class="module" id="vault">
+  <div class="module-head"><div class="eyebrow">03 / CONTENT VAULT</div><h2>Semua ide tersimpan, tidak tercecer.</h2><p>Kelola hasil generator, salin ulang, bagikan, dan ekspor arsip konten dari browser perangkat ini.</p></div>
+  <div class="metric-grid" style="margin-bottom:14px"><div class="metric"><small>Konten tersimpan</small><strong id="vaultCount">0</strong></div><div class="metric"><small>Jadwal aktif</small><strong id="scheduledCount">0</strong></div><div class="metric"><small>Konversi tercatat</small><strong id="conversionCount">0</strong></div></div>
+  <div class="module-grid">
+   <div class="module-card"><h3>Riwayat konten</h3><div class="field"><input id="vaultSearch" placeholder="Cari nama produk atau format..."></div><div id="vaultList"><div class="empty">Belum ada konten tersimpan.</div></div><div class="module-actions"><button class="btn secondary" id="exportVault">Backup Content Vault</button><button class="btn ghost" id="clearVault">Hapus semua riwayat</button></div></div>
+   <div class="module-card"><h3>Catat performa konten</h3><p>Masukkan angka aktual dari platform. Payung AI Studio tidak mengambil statistik akun secara otomatis.</p>
+    <div class="field"><label for="metricContent">Pilih konten</label><select id="metricContent"><option value="">Belum ada konten</option></select></div>
+    <div class="grid2"><div class="field"><label for="metricViews">Views</label><input id="metricViews" type="number" min="0" placeholder="0"></div><div class="field"><label for="metricClicks">Klik</label><input id="metricClicks" type="number" min="0" placeholder="0"></div></div>
+    <div class="grid2"><div class="field"><label for="metricOrders">Pesanan</label><input id="metricOrders" type="number" min="0" placeholder="0"></div><div class="field"><label for="metricRevenue">Omzet (Rp)</label><input id="metricRevenue" type="number" min="0" placeholder="0"></div></div>
+    <button class="btn primary" id="saveMetrics" style="width:100%">Simpan performa aktual</button><div id="metricSummary" class="note">Data performa akan diringkas di sini.</div>
+   </div>
+  </div>
+ </section>
+
+ <section class="library" id="library">
+  <div class="section-head"><div><div class="eyebrow">03 / CINEMATIC KNOWLEDGE BASE</div><h2>99 teknik cinematic</h2><p>Jelajahi istilah kamera, pencahayaan, komposisi, efek visual, dan storytelling.</p></div><span class="pill">9 CATEGORIES · 99 TECHNIQUES</span></div>
+  <div class="library-grid" id="libraryCards"></div>
+  <div class="tech-controls"><input id="techSearch" placeholder="Cari teknik, contoh: orbit, macro..."><select id="techCategory"><option value="all">Semua kategori</option></select></div>
+  <div class="tech-list" id="techList"></div>
+ </section>
+ <section id="about" style="margin:35px 0 55px">
+  <div class="panel" style="padding:22px">
+   <div class="eyebrow">ABOUT THE STUDIO</div><h2 style="margin:10px 0">Creative tools for every product story.</h2>
+   <p style="max-width:800px;color:var(--muted);font-size:13px">Payung AI Studio adalah creative workspace untuk ide konten produk, script, caption, kalender posting, Content Vault, pencatatan performa manual, storyboard, dan prompt video iklan. Fitur lokal berjalan di browser tanpa akun, backend, atau API key. Integrasi AI cloud dan marketplace membutuhkan backend serta API terpisah.</p>
+   <p style="color:var(--muted);font-size:11px">Catatan: Payung AI Studio bukan produk resmi Google dan tidak berafiliasi dengan Google. Nama Google Flow digunakan hanya untuk menjelaskan kompatibilitas alur kerja prompt.</p>
+  </div>
+ </section>
+</main>
+<footer><div class="container footer-inner"><span>© <span id="year"></span> Payung AI Studio. Made for creators.</span><span>Standalone HTML · Public · Free · No account required</span></div></footer>
+<div class="toast" id="toast">Tersalin ke clipboard</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const techniques = [
+["Camera Movement","Dolly In","Kamera bergerak mendekati subjek secara halus."],["Camera Movement","Dolly Out","Kamera menjauh untuk memperlihatkan konteks adegan."],["Camera Movement","Orbit Shot","Kamera mengitari produk dengan gerakan stabil."],["Camera Movement","Tracking Shot","Kamera mengikuti gerakan subjek."],["Camera Movement","Pan Left","Kamera menggeser pandangan ke kiri."],["Camera Movement","Pan Right","Kamera menggeser pandangan ke kanan."],["Camera Movement","Tilt Up","Kamera menengadah dari bawah ke atas."],["Camera Movement","Tilt Down","Kamera bergerak dari atas ke bawah."],["Camera Movement","Crane Up","Kamera naik secara vertikal dan dramatis."],["Camera Movement","Crane Down","Kamera turun secara vertikal dan terkontrol."],["Camera Movement","Drone Flyover","Kamera udara melintasi lokasi."],
+["Camera Angle & Perspective","Low Angle","Sudut rendah membuat subjek tampak dominan."],["Camera Angle & Perspective","High Angle","Sudut tinggi memperlihatkan subjek dari atas."],["Camera Angle & Perspective","Eye Level","Kamera sejajar dengan mata subjek."],["Camera Angle & Perspective","Bird's Eye View","Tampilan tegak lurus dari atas."],["Camera Angle & Perspective","Worm's Eye View","Sudut kamera sangat rendah dekat permukaan."],["Camera Angle & Perspective","POV Shot","Adegan dari sudut pandang orang pertama."],["Camera Angle & Perspective","Over The Shoulder","Kamera melewati bahu karakter."],["Camera Angle & Perspective","Dutch Angle","Horizon dimiringkan untuk kesan dinamis."],["Camera Angle & Perspective","Wide Angle","Lensa lebar memperlihatkan lingkungan."],["Camera Angle & Perspective","Close-up","Bingkai dekat menonjolkan subjek."],["Camera Angle & Perspective","Establishing Shot","Bidikan pembuka untuk mengenalkan lokasi."],
+["Motion & Action","Slow Motion","Gerakan diperlambat untuk menekankan momen."],["Motion & Action","Speed Ramp","Kecepatan berubah halus antara lambat dan cepat."],["Motion & Action","Time Lapse","Perubahan waktu dipadatkan dalam satu adegan."],["Motion & Action","Hyperlapse","Kamera bergerak melintasi ruang dengan waktu dipercepat."],["Motion & Action","Freeze Frame","Aksi berhenti pada momen tertentu."],["Motion & Action","Bullet Time","Subjek tampak tertahan saat sudut pandang mengitari."],["Motion & Action","Product Reveal","Produk diperlihatkan secara bertahap."],["Motion & Action","Turnaround","Produk berputar untuk memperlihatkan sisi-sisinya."],["Motion & Action","Floating Motion","Objek tampak melayang secara terkendali."],["Motion & Action","Dynamic Entrance","Subjek memasuki frame dengan gerakan kuat."],["Motion & Action","Motion Blur","Blur gerak realistis menegaskan kecepatan."],
+["Cinematic Lighting","Golden Hour","Cahaya matahari hangat menjelang senja."],["Cinematic Lighting","Blue Hour","Nuansa biru lembut saat senja atau fajar."],["Cinematic Lighting","Neon Lighting","Cahaya neon berwarna menciptakan atmosfer urban."],["Cinematic Lighting","Soft Lighting","Cahaya lembut dengan bayangan halus."],["Cinematic Lighting","Hard Lighting","Cahaya tegas dengan bayangan terdefinisi."],["Cinematic Lighting","Rim Lighting","Cahaya tepi memisahkan subjek dari latar."],["Cinematic Lighting","Backlighting","Sumber cahaya berada di belakang subjek."],["Cinematic Lighting","Volumetric Lighting","Sinar terlihat menembus partikel atau kabut."],["Cinematic Lighting","Spotlight","Sorotan cahaya terarah pada subjek."],["Cinematic Lighting","Silhouette Lighting","Subjek terbaca sebagai siluet."],["Cinematic Lighting","Moody Lighting","Cahaya dramatis dengan kontras atmosferik."],
+["Composition & Framing","Rule of Thirds","Subjek ditempatkan pada garis sepertiga."],["Composition & Framing","Center Composition","Subjek utama berada di tengah frame."],["Composition & Framing","Symmetrical Composition","Elemen visual disusun seimbang dan simetris."],["Composition & Framing","Negative Space","Ruang kosong disediakan untuk teks atau napas visual."],["Composition & Framing","Leading Lines","Garis mengarahkan mata menuju subjek."],["Composition & Framing","Frame Within Frame","Elemen sekitar membingkai subjek."],["Composition & Framing","Foreground Framing","Elemen depan memberi kedalaman dan bingkai."],["Composition & Framing","Minimalist Composition","Komposisi bersih dengan elemen terbatas."],["Composition & Framing","Diagonal Composition","Garis diagonal menambah energi visual."],["Composition & Framing","Layered Composition","Foreground, midground, dan background membentuk kedalaman."],["Composition & Framing","Tight Framing","Bingkai rapat menekankan detail subjek."],
+["Camera & Visual Effects","Lens Flare","Pantulan cahaya lensa yang terkontrol."],["Camera & Visual Effects","Bokeh","Bola cahaya latar menjadi blur artistik."],["Camera & Visual Effects","Film Grain","Tekstur butiran film yang halus."],["Camera & Visual Effects","Vignette","Tepi frame sedikit lebih gelap."],["Camera & Visual Effects","Zoom Blur","Blur radial mengikuti gerakan zoom."],["Camera & Visual Effects","Radial Blur","Blur menyebar dari satu titik."],["Camera & Visual Effects","Glitch Effect","Distorsi digital singkat dan terarah."],["Camera & Visual Effects","Prism Effect","Cahaya terpecah seperti prisma."],["Camera & Visual Effects","Split Tone","Warna highlight dan shadow dibedakan."],["Camera & Visual Effects","Monochrome","Palet satu warna atau hitam putih."],["Camera & Visual Effects","Chromatic Aberration","Pergeseran warna tepi lensa yang subtil."],
+["Focus & Depth","Shallow Depth of Field","Subjek tajam dengan latar belakang blur."],["Focus & Depth","Deep Focus","Foreground dan background tetap terbaca tajam."],["Focus & Depth","Rack Focus","Fokus berpindah dari satu bidang ke bidang lain."],["Focus & Depth","Macro Focus","Detail kecil direkam dari jarak sangat dekat."],["Focus & Depth","Selective Focus","Hanya area penting yang dibuat tajam."],["Focus & Depth","Eye Focus","Fokus presisi pada mata karakter."],["Focus & Depth","Center Focus","Area pusat frame menjadi titik fokus."],["Focus & Depth","Manual Focus","Perubahan fokus terasa terkontrol dan sinematik."],["Focus & Depth","Focus Pull","Fokus berpindah antarsubjek secara halus."],["Focus & Depth","Soft Focus","Detail tampak lembut dengan glow tipis."],["Focus & Depth","Background Defocus","Latar diburamkan untuk memisahkan subjek."],
+["Color Grading","Teal & Orange","Kontras warna teal pada shadow dan orange pada skin/highlight."],["Color Grading","Warm Color","Palet hangat dan bersahabat."],["Color Grading","Cool Color","Palet dingin dengan nuansa biru."],["Color Grading","Cinematic Contrast","Kontras terukur dengan detail shadow terjaga."],["Color Grading","Vibrant Color","Warna kuat, bersih, dan hidup."],["Color Grading","Desaturated Color","Saturasi rendah untuk kesan tenang."],["Color Grading","Black & White","Gradasi monokrom hitam putih."],["Color Grading","Pastel Tone","Warna pastel lembut dan ringan."],["Color Grading","Dark Cinematic","Palet gelap dengan highlight terarah."],["Color Grading","Natural Color","Warna realistis dan seimbang."],["Color Grading","Luxury Gold Tone","Highlight emas memberi kesan premium."],
+["Storytelling & Commercial Direction","Emotional Hook","Pembuka visual yang membangun emosi."],["Storytelling & Commercial Direction","Mystery Reveal","Informasi disembunyikan sebelum pengungkapan."],["Storytelling & Commercial Direction","Problem to Solution","Alur dari masalah menuju solusi produk."],["Storytelling & Commercial Direction","Hero Product Shot","Produk tampil dominan sebagai pusat perhatian."],["Storytelling & Commercial Direction","Lifestyle Demonstration","Produk digunakan dalam konteks keseharian."],["Storytelling & Commercial Direction","Texture Showcase","Tekstur produk ditonjolkan melalui macro."],["Storytelling & Commercial Direction","Ingredient Showcase","Bahan atau komponen produk diperlihatkan."],["Storytelling & Commercial Direction","Before and After","Perbandingan kondisi sebelum dan sesudah."],["Storytelling & Commercial Direction","Premium Brand Reveal","Identitas merek diperkenalkan dengan elegan."],["Storytelling & Commercial Direction","Call to Action","Ajakan tindakan yang jelas dan mudah diingat."],["Storytelling & Commercial Direction","Cinematic Ending","Penutup visual yang kuat dan berkesan."]
+];
+const cameraOptions=["Dolly In","Orbit Shot","Tracking Shot","Macro Focus","Slow Motion","Product Reveal","Rack Focus","Crane Up","Close-up","Turnaround","Hero Product Shot","Golden Hour","Rim Lighting","Shallow Depth of Field"];
+let selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];
+let lastOutput="";
+const $=id=>document.getElementById(id);
+const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),1900)}
+function renderCameraChips(){
+ $("cameraChips").innerHTML=cameraOptions.map(x=>`<button type="button" class="chip ${selectedCameras.includes(x)?"active":""}" data-camera="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("");
+ $("cameraChips").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{const v=b.dataset.camera;selectedCameras=selectedCameras.includes(v)?selectedCameras.filter(x=>x!==v):[...selectedCameras,v];renderCameraChips();if(typeof scheduleDraftSave==="function")scheduleDraftSave()}));
+}
+function scenePlan(duration){
+ if(duration===10)return [{t:"0–2s",name:"The Hook",purpose:"Hentikan scroll dengan visual pembuka yang kuat."},{t:"2–5s",name:"Product Reveal",purpose:"Perlihatkan produk sebagai pusat cerita."},{t:"5–8s",name:"Detail & Desire",purpose:"Tampilkan tekstur, fitur, dan daya tarik utama."},{t:"8–10s",name:"Brand & CTA",purpose:"Tutup dengan hero shot dan ajakan bertindak."}];
+ if(duration===20)return [{t:"0–3s",name:"The Hook",purpose:"Bangun rasa penasaran dan hentikan scroll."},{t:"3–7s",name:"Product Reveal",purpose:"Ungkap produk dengan gerakan kamera elegan."},{t:"7–12s",name:"Texture Showcase",purpose:"Tonjolkan detail, bahan, atau keunggulan."},{t:"12–16s",name:"Lifestyle / Benefit",purpose:"Hubungkan produk dengan kebutuhan audiens."},{t:"16–20s",name:"Hero Shot & CTA",purpose:"Perkuat brand recall dan arahkan tindakan."}];
+ return [{t:"0–4s",name:"The Hook",purpose:"Buka dengan situasi, emosi, atau visual pemikat."},{t:"4–9s",name:"Product Reveal",purpose:"Perkenalkan produk dengan reveal sinematik."},{t:"9–15s",name:"Detail & Craft",purpose:"Perlihatkan tekstur, bahan, dan detail unggulan."},{t:"15–21s",name:"Lifestyle Demonstration",purpose:"Tampilkan produk dalam konteks penggunaan."},{t:"21–26s",name:"Brand Positioning",purpose:"Tegaskan karakter dan pesan merek."},{t:"26–30s",name:"Hero Shot & CTA",purpose:"Akhiri dengan komposisi produk dan CTA."}];
+}
+function buildScenePrompt(data,scene,index,total){
+ const isEn=data.language==="English";
+ const cam=selectedCameras.length?selectedCameras.join(", "):"smooth dolly-in and controlled close-up";
+ const common=`Product identity lock: ${data.product}. Use the provided reference image as the exact visual guide whenever supplied. Preserve packaging silhouette, label layout, logo, typography, brand colors, material, proportions and product details. Do not invent or alter brand elements.`;
+ const details=data.description?`Product description: ${data.description}.`:"";
+ const benefit=data.usp?`Main selling point: ${data.usp}.`:"";
+ const extra=data.extra?`Additional creative direction: ${data.extra}.`:"";
+ let action;
+ if(index===0)action=`Open with an attention-grabbing ${data.mood.toLowerCase()} visual related to ${data.category.toLowerCase()}. Use a compelling close-up, a striking environmental detail or a visual mystery; reveal only enough to create curiosity.`;
+ else if(scene.name==="Product Reveal")action=`Reveal ${data.product} elegantly from shadow or foreground elements. Make the product clearly recognizable and visually dominant.`;
+ else if(scene.name==="Texture Showcase"||scene.name==="Detail & Craft")action=`Show extreme macro details of the product surface, packaging, material and defining features. Make textures tactile and photorealistic.`;
+ else if(scene.name==="Lifestyle / Benefit"||scene.name==="Lifestyle Demonstration")action=`Show a believable lifestyle context that communicates ${data.usp||"the product's intended value"} without making unsupported performance or health claims.`;
+ else if(scene.name==="Brand Positioning")action=`Create a refined brand moment that communicates ${data.mood.toLowerCase()}. Keep the product and its original identity in clear view.`;
+ else action=`Finish with a memorable centered hero product shot of ${data.product}, clean negative space for brand text, and a clear call to action: "${data.cta}".`;
+ const camera=selectedCameras[(index+1)%Math.max(selectedCameras.length,1)]||"Dolly In";
+ const light=index===0?"controlled dramatic contrast":data.lighting;
+ const voice=data.voice==="Tanpa voice-over"?"No voice-over; use visual storytelling and sound design.":`Voice-over direction: ${data.voice}.`;
+ const music=`Sound design: ${data.music}.`;
+ if(isEn)return `${common} ${details} ${benefit}\n\nSCENE ${index+1}/${total} — ${scene.name} (${scene.t})\nAction: ${action}\nEnvironment: A carefully art-directed ${data.style.toLowerCase()} commercial set appropriate for ${data.category.toLowerCase()}, with a clean, premium background and realistic materials.\nCamera: ${camera}; ${cam}. Use a deliberate ${index===0?"attention-grabbing opening composition":"commercial composition"} with controlled framing and smooth movement.\nLighting: ${light}; realistic reflections, dimensional shadows and accurate product color.\nLook & mood: ${data.style}; ${data.mood}; photorealistic, premium advertising cinematography, detailed textures, natural physics.\nContinuity: Maintain the exact same product design, scale, label, color and orientation continuity across shots. Avoid morphing, flicker, duplicate products or sudden camera jumps.\nAudio: ${voice} ${music}\nFormat: ${data.platform}. Duration target for this shot: ${scene.t}. ${extra}\nNegative instructions: no misspelled text, no invented logo, no altered packaging, no watermark, no warped geometry, no extra fingers or unrealistic hands.`;
+ return `${common} ${details} ${benefit}\n\nADEGAN ${index+1}/${total} — ${scene.name} (${scene.t})\nAksi: ${action}\nLingkungan: Set iklan ${data.style.toLowerCase()} yang ditata sesuai kategori ${data.category.toLowerCase()}, dengan latar premium, material realistis, dan detail terkontrol.\nKamera: ${camera}; ${cam}. Gunakan komposisi iklan yang terencana dengan framing presisi dan gerakan halus.\nPencahayaan: ${light}; pantulan realistis, bayangan berdimensi, dan warna produk yang akurat.\nTampilan & suasana: ${data.style}; ${data.mood}; fotorealistis, sinematografi iklan premium, tekstur detail, fisika alami.\nKontinuitas: Pertahankan desain, skala, label, warna, dan orientasi produk yang sama di seluruh adegan. Hindari perubahan bentuk, flicker, produk duplikat, dan perpindahan kamera mendadak.\nAudio: ${voice} ${music}\nFormat: ${data.platform}. Target durasi adegan: ${scene.t}. ${extra}\nInstruksi negatif: tanpa teks salah eja, logo rekaan, kemasan berubah, watermark, geometri melengkung, jari tambahan, atau tangan tidak realistis.`;
+}
+function generate(){
+ const product=$("productName").value.trim();if(!product){$("productName").focus();toast("Isi nama produk terlebih dahulu.");return}
+ const duration=Number($("duration").value),plan=scenePlan(duration);
+ const data={product,category:$("category").value,description:$("description").value.trim(),usp:$("usp").value.trim(),cta:$("cta").value.trim()||"Learn more",duration,platform:$("platform").value,language:$("language").value,style:$("style").value,mood:$("mood").value,lighting:$("lighting").value,voice:$("voice").value,music:$("music").value,extra:$("extra").value.trim()};
+ const prompts=plan.map((s,i)=>buildScenePrompt(data,s,i,plan.length));
+ const master=`PAYUNG AI STUDIO — MASTER CREATIVE DIRECTION\n\nPROJECT: ${data.product}\nCATEGORY: ${data.category}\nDURATION: ${duration} seconds\nFORMAT: ${data.platform}\nVISUAL STYLE: ${data.style}\nMOOD: ${data.mood}\nLIGHTING: ${data.lighting}\nCAMERA LANGUAGE: ${selectedCameras.join(", ")||"Smooth cinematic camera movement"}\n\nPRODUCT CONSISTENCY LOCK:\nUse the uploaded product reference as the source of truth. Preserve exact packaging, logo, typography, label, colors, proportions and materials. Keep the product visually consistent in every shot. Do not fabricate product claims, labels or certifications.\n\nCREATIVE STORY:\n${plan.map((s,i)=>`${s.t} — ${s.name}: ${s.purpose}`).join("\n")}\n\nCORE VISUAL DIRECTION:\nCreate a coherent ${data.style.toLowerCase()} commercial with realistic product materials, physically plausible movement, intentional camera work, professional lighting, detailed textures and polished color grading. Maintain continuity between every scene. Keep key product details legible and unobstructed.\n\nAUDIO:\n${data.voice}. ${data.music}.\n\nBRAND MESSAGE:\n${data.usp||"Communicate the product's defining value clearly."}\nCALL TO ACTION: ${data.cta}\nADDITIONAL NOTES: ${data.extra||"None"}\n\nDELIVERY: ${duration}-second ${data.platform} advertisement. Generate each scene as a separate clip if required by the video tool, then assemble them in order. Add final typography and exact brand text in an editor where precise lettering is required.\n\nIMPORTANT: AI video generation may not preserve exact logos or packaging perfectly. Use the original product image as a visual reference and inspect every generated frame before publishing.`;
+ $("resultMeta").textContent=`${product} · ${duration} detik · ${plan.length} adegan · ${data.platform}`;
+ $("sceneList").innerHTML=plan.map((s,i)=>`<article class="scene"><div class="scene-head"><div class="scene-name"><span class="scene-num">0${i+1}</span><div><strong>${escapeHtml(s.name)}</strong><small>${s.t} · ${escapeHtml(s.purpose)}</small></div></div><button class="copy-small" data-copy-scene="${i}">Copy prompt</button></div><div class="scene-body"><div class="scene-block"><h4>Visual direction</h4><p>${escapeHtml(s.purpose)} ${escapeHtml(data.style)} · ${escapeHtml(data.mood)}</p></div><div class="scene-block"><h4>Camera & lighting</h4><p>${escapeHtml(selectedCameras.join(", ")||"Smooth cinematic movement")} \n${escapeHtml(data.lighting)}</p></div><div class="scene-block prompt-box"><h4>Prompt siap digunakan</h4><p class="prompt-text">${escapeHtml(prompts[i])}</p></div></div></article>`).join("");
+ $("masterPrompt").textContent=master;
+ lastOutput=`PAYUNG AI STUDIO — STORYBOARD\n${data.product}\n${duration} detik | ${data.platform}\n\n`+plan.map((s,i)=>`==============================\n${s.t} — ${s.name}\n${s.purpose}\n\n${prompts[i]}`).join("\n\n")+"\n\n==============================\n"+master;
+ $("results").style.display="block";$("results").scrollIntoView({behavior:"smooth",block:"start"});
+ $("sceneList").querySelectorAll("[data-copy-scene]").forEach(b=>b.addEventListener("click",()=>copyText(prompts[Number(b.dataset.copyScene)])));
+}
+async function copyText(text){try{await navigator.clipboard.writeText(text);toast("Berhasil disalin.");}catch(e){const ta=document.createElement("textarea");ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();toast("Berhasil disalin.");}}
+function renderLibrary(){
+ const groups=[...new Set(techniques.map(x=>x[0]))];
+ $("libraryCards").innerHTML=groups.map(g=>`<div class="lib-card"><strong>${techniques.filter(x=>x[0]===g).length.toString().padStart(2,"0")}</strong><h3>${escapeHtml(g)}</h3><p>Teknik kamera dan arahan visual.</p></div>`).join("");
+ $("techCategory").innerHTML='<option value="all">Semua kategori</option>'+groups.map(g=>`<option>${escapeHtml(g)}</option>`).join("");
+ renderTech();
+}
+function renderTech(){
+ const q=$("techSearch").value.toLowerCase(),cat=$("techCategory").value;
+ const items=techniques.filter(x=>(cat==="all"||x[0]===cat)&&(x[1]+" "+x[2]+" "+x[0]).toLowerCase().includes(q));
+ $("techList").innerHTML=items.map((x)=>`<div class="tech-item"><b>${escapeHtml(x[1])}</b><span>${escapeHtml(x[2])}</span></div>`).join("")||'<div class="empty" style="grid-column:1/-1">Teknik tidak ditemukan.</div>';
+}
+function updateSummary(){
+ $("sumDuration").textContent=$("duration").value+" detik";
+ $("sumScenes").textContent=scenePlan(Number($("duration").value)).length+" adegan";
+ $("sumRatio").textContent=$("platform").value.includes("9:16")?"9:16":$("platform").value.includes("16:9")?"16:9":$("platform").value.includes("4:5")?"4:5":"1:1";
+}
+// PAYUNG AI STUDIO 2.1 FINAL — templates, local project storage, autosave and portable backup
+const PROJECTS_KEY="payungAIStudioProjectsV2";
+const templatePresets={
+ food:{category:"Makanan dan minuman",style:"Hyper realistic commercial",mood:"Warm, friendly, authentic",lighting:"Golden hour warm sunlight",voice:"Narator wanita, elegan dan ramah",music:"Modern upbeat commercial",description:"Tampilkan produk makanan secara menggugah selera dengan tekstur nyata, detail bahan, dan kemasan yang tetap akurat.",usp:"Tampilan menggugah selera, kualitas dan cita rasa khas"},
+ beauty:{category:"Skincare dan kecantikan",style:"Minimalist premium",mood:"Premium, elegant, sophisticated",lighting:"Soft studio lighting with rim light",voice:"Narator wanita, elegan dan ramah",music:"Luxury atmospheric soundscape",description:"Tampilkan tekstur produk, detail kemasan, dan suasana clean beauty. Hindari klaim hasil atau manfaat yang tidak didukung.",usp:"Perawatan praktis dengan tampilan premium"},
+ fashion:{category:"Fashion dan aksesoris",style:"Luxury cinematic",mood:"Premium, elegant, sophisticated",lighting:"Dramatic low-key lighting",voice:"Voice-over storytelling emosional",music:"Cinematic orchestral build-up",description:"Buat film produk editorial dengan detail bahan, tekstur, jahitan, siluet, dan gerakan kain yang realistis.",usp:"Desain berkarakter dan detail material"},
+ tech:{category:"Elektronik dan gadget",style:"3D product animation",mood:"Energetic, bold, exciting",lighting:"Neon cinematic lighting",voice:"Narator pria, hangat dan meyakinkan",music:"Modern upbeat commercial",description:"Tampilkan bentuk perangkat, material, port, tombol, dan detail desain secara presisi melalui gerakan kamera halus.",usp:"Desain modern dan fitur utama yang mudah dipahami"},
+ home:{category:"Rumah tangga",style:"Natural lifestyle",mood:"Warm, friendly, authentic",lighting:"Natural window light",voice:"Narator pria, hangat dan meyakinkan",music:"Minimal ambient and subtle sound effects",description:"Tampilkan produk di lingkungan rumah yang rapi dan realistis, dengan demonstrasi penggunaan yang masuk akal.",usp:"Membantu aktivitas sehari-hari"}
+};
+function getProjectStore(){try{return JSON.parse(localStorage.getItem(PROJECTS_KEY)||"{}")}catch(e){return {}}}
+function refreshProjectList(selected=""){
+ const store=getProjectStore(),keys=Object.keys(store).sort((a,b)=>store[b].savedAt-store[a].savedAt);
+ $("savedProjects").innerHTML=keys.length?'<option value="">Pilih proyek tersimpan…</option>'+keys.map(k=>'<option value="'+escapeHtml(k)+'">'+escapeHtml(k)+'</option>').join(""):'<option value="">Belum ada proyek tersimpan</option>';
+ if(selected&&store[selected])$("savedProjects").value=selected;
+}
+function captureProject(){
+ const ids=["productName","category","description","usp","cta","duration","platform","language","style","mood","lighting","voice","music","extra"],values={};
+ ids.forEach(id=>values[id]=$(id).value);
+ return {values,cameras:[...selectedCameras],output:lastOutput,savedAt:Date.now()};
+}
+function applyProject(project){
+ if(!project||!project.values)return;
+ Object.entries(project.values).forEach(([id,value])=>{if($(id))$(id).value=value});
+ selectedCameras=Array.isArray(project.cameras)?project.cameras:[];renderCameraChips();updateSummary();
+ if(project.output)lastOutput=project.output;
+ toast("Proyek berhasil dimuat. Tekan Generate untuk membuat ulang storyboard.");
+}
+$("applyTemplate").addEventListener("click",()=>{
+ const key=$("adTemplate").value,preset=templatePresets[key];if(!preset){toast("Pilih template terlebih dahulu.");return}
+ Object.entries(preset).forEach(([id,value])=>{if($(id))$(id).value=value});
+ if(!$("productName").value.trim())$("productName").value={food:"Produk Makanan",beauty:"Produk Skincare",fashion:"Produk Fashion",tech:"Produk Gadget",home:"Produk Rumah Tangga"}[key];
+ selectedCameras={food:["Macro Focus","Slow Motion","Dolly In","Product Reveal"],beauty:["Macro Focus","Rack Focus","Dolly In","Hero Product Shot"],fashion:["Tracking Shot","Slow Motion","Orbit Shot","Close-up"],tech:["Orbit Shot","Crane Up","Macro Focus","Product Reveal"],home:["Tracking Shot","Golden Hour","Close-up","Dolly In"]}[key];
+ renderCameraChips();updateSummary();persistDraft();toast("Template diterapkan. Sesuaikan nama dan detail produk.");
+});
+$("saveProject").addEventListener("click",()=>{
+ const name=$("projectName").value.trim()||$("productName").value.trim();if(!name){toast("Isi nama proyek atau nama produk terlebih dahulu.");$("projectName").focus();return}
+ try{const store=getProjectStore();store[name]=captureProject();localStorage.setItem(PROJECTS_KEY,JSON.stringify(store));refreshProjectList(name);persistDraft();toast("Proyek tersimpan di perangkat ini.")}
+ catch(e){toast("Penyimpanan gagal. Periksa ruang browser.")}
+});
+$("loadProject").addEventListener("click",()=>{const name=$("savedProjects").value,project=getProjectStore()[name];if(!project){toast("Pilih proyek yang ingin dimuat.");return}$("projectName").value=name;applyProject(project);persistDraft()});
+$("deleteProject").addEventListener("click",()=>{const name=$("savedProjects").value;if(!name){toast("Pilih proyek yang ingin dihapus.");return}try{const store=getProjectStore();delete store[name];localStorage.setItem(PROJECTS_KEY,JSON.stringify(store));refreshProjectList();toast("Proyek dihapus dari perangkat ini.")}catch(e){toast("Tidak dapat menghapus data. Periksa izin penyimpanan browser.")}});
+// Automatic local draft plus portable full-project backup.
+const DRAFT_KEY="payungAIStudioDraftV21";
+let draftTimer=null;
+function persistDraft(){
+ try{localStorage.setItem(DRAFT_KEY,JSON.stringify({project:captureProject(),projectName:$("projectName").value,savedAt:Date.now()}));}
+ catch(e){/* Keep the generator usable if browser storage is unavailable. */}
+}
+function restoreDraft(){
+ try{const raw=localStorage.getItem(DRAFT_KEY);if(!raw)return;const draft=JSON.parse(raw);if(draft&&draft.project){applyProject(draft.project);$("projectName").value=draft.projectName||"";}}
+ catch(e){localStorage.removeItem(DRAFT_KEY);}
+}
+function scheduleDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(persistDraft,350);}
+function downloadJson(filename,data){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("exportBackup").addEventListener("click",()=>{
+ const backup={app:"Payung AI Studio",version:"3.0",exportedAt:new Date().toISOString(),projects:getProjectStore(),draft:{project:captureProject(),projectName:$("projectName").value},vault:safeRead("payungStudioVaultV3",[]),calendar:safeRead("payungStudioCalendarV3",[]),metrics:safeRead("payungStudioMetricsV3",{})};
+ downloadJson("payung-ai-studio-backup.json",backup);toast("Backup JSON berhasil dibuat.");
+});
+$("importBackup").addEventListener("click",()=>$("backupFile").click());
+$("backupFile").addEventListener("change",event=>{
+ const file=event.target.files&&event.target.files[0];if(!file)return;
+ const reader=new FileReader();reader.onload=()=>{
+  try{
+   const data=JSON.parse(String(reader.result||""));
+   if(!data||data.app!=="Payung AI Studio"||!data.projects||typeof data.projects!=="object")throw new Error("Format backup tidak dikenali");
+   const existing=getProjectStore();const merged={...existing,...data.projects};
+   localStorage.setItem(PROJECTS_KEY,JSON.stringify(merged));
+   if(Array.isArray(data.vault))safeWrite("payungStudioVaultV3",data.vault);
+   if(Array.isArray(data.calendar))safeWrite("payungStudioCalendarV3",data.calendar);
+   if(data.metrics&&typeof data.metrics==="object")safeWrite("payungStudioMetricsV3",data.metrics);
+   if(data.draft&&data.draft.project){applyProject(data.draft.project);$("projectName").value=data.draft.projectName||"";persistDraft();}
+   refreshProjectList();if(typeof renderCalendar==="function")renderCalendar();if(typeof updateVault==="function")updateVault();toast("Backup berhasil dipulihkan.");
+  }catch(err){toast("File backup tidak valid atau penyimpanan penuh.");}
+  event.target.value="";
+ };
+ reader.onerror=()=>{toast("File backup gagal dibaca.");event.target.value="";};reader.readAsText(file);
+});
+// Restore the last working draft after the page is initialized.
+restoreDraft();
+document.querySelectorAll("#generator input:not([type=file]),#generator select,#generator textarea").forEach(el=>{
+ el.addEventListener("input",scheduleDraftSave);el.addEventListener("change",scheduleDraftSave);
+});
+$("generate").addEventListener("click",()=>{generate();persistDraft();});
+$("duration").addEventListener("change",updateSummary);$("platform").addEventListener("change",updateSummary);
+$("copyAll").addEventListener("click",()=>copyText(lastOutput));
+$("copyMaster").addEventListener("click",()=>copyText($("masterPrompt").textContent));
+$("download").addEventListener("click",()=>{if(!lastOutput)return;const blob=new Blob([lastOutput],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="payung-ai-studio-storyboard.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+$("print").addEventListener("click",()=>window.print());
+$("reset").addEventListener("click",()=>{document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(x=>x.value="");$("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;$("reference").value="";$("preview").style.display="none";selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();$("results").style.display="none";try{localStorage.removeItem(DRAFT_KEY)}catch(e){}$("projectName").value="";toast("Formulir direset.")});
+$("reference").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith("image/")){toast("Pilih file gambar.");return}const url=URL.createObjectURL(f);$("preview").src=url;$("preview").style.display="block"});
+$("techSearch").addEventListener("input",renderTech);$("techCategory").addEventListener("change",renderTech);
+
+// PAYUNG AI STUDIO 3.0 — local social-commerce content suite
+const VAULT_KEY="payungStudioVaultV3",CAL_KEY="payungStudioCalendarV3",METRIC_KEY="payungStudioMetricsV3";
+const socialFormats={
+ racun:{name:"Racun Produk",hook:"Awalnya cuma lihat-lihat, ternyata ada satu detail yang bikin produk ini menarik.",angle:"Bangun rasa penasaran dari satu fitur atau detail yang benar-benar ada."},
+ keranjang:{name:"Cek Keranjang Kuning",hook:"Kalau memang sedang mencari {product}, cek detailnya dulu sebelum memutuskan.",angle:"Tunjukkan produk, manfaat faktual, harga yang diperbarui manual, lalu ajak cek keranjang."},
+ review:{name:"Spill Jujur",hook:"Ini hal yang perlu kamu tahu sebelum membeli {product}.",angle:"Sampaikan kelebihan, batasan, dan siapa yang mungkin cocok menggunakan produk."},
+ pov:{name:"POV Relatable",hook:"POV: kamu sedang mencari solusi praktis untuk kebutuhan sehari-hari.",angle:"Buat situasi keseharian yang relevan dengan target audiens."},
+ before:{name:"Before / After",hook:"Lihat perbedaan ini—dengan catatan hasil bisa berbeda pada setiap orang.",angle:"Gunakan hanya dokumentasi perbandingan yang nyata, relevan, dan tidak dimanipulasi."},
+ battle:{name:"Battle Produk",hook:"Dua pilihan, kebutuhan berbeda. Mana yang lebih cocok buat kamu?",angle:"Bandingkan spesifikasi yang terverifikasi, bukan klaim yang dibuat-buat."},
+ unboxing:{name:"Unboxing Cepat",hook:"Yuk, lihat apa saja yang ada di dalam paket {product}.",angle:"Perlihatkan kemasan, isi paket, detail fisik, dan first impression yang jujur."},
+ reasons:{name:"3 Alasan Wajib Punya",hook:"Tiga hal yang layak kamu pertimbangkan dari {product}.",angle:"Pilih tiga fakta atau fitur yang paling relevan dengan calon pembeli."},
+ budget:{name:"Budget Challenge",hook:"Cari pilihan sesuai budget? Ini detail {product} yang perlu dicek.",angle:"Bahas harga terkini, fitur, nilai guna, dan alternatif dengan transparan."},
+ fyp:{name:"FYP Starter Pack",hook:"Simpan dulu kalau kamu sedang mempertimbangkan {product}.",angle:"Gunakan hook singkat, visual produk yang jelas, dan satu pesan utama."}
+};
+let currentSocialText="",currentCalendar=[];
+const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}};
+const safeWrite=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));if(typeof payungSupabase!=="undefined"&&payungSupabase&&payungSession)payungSyncWorkspace();return true}catch(e){toast("Penyimpanan browser penuh atau tidak tersedia.");return false}};
+function socialTemplateCards(){const root=$("socialTemplates");if(!root)return;root.innerHTML=Object.entries(socialFormats).map(([key,v])=>`<div class="template-card"><b>${escapeHtml(v.name)}</b><span>${escapeHtml(v.angle)}</span><button type="button" data-social-template="${key}">Pakai template →</button></div>`).join("");root.querySelectorAll("[data-social-template]").forEach(b=>b.addEventListener("click",()=>{$("socialFormat").value=b.dataset.socialTemplate;$("socialTone").focus();toast("Template dipilih. Lengkapi brief produk.")}));}
+function createSocialContent(){
+ const product=$("socialProduct").value.trim();if(!product){$("socialProduct").focus();toast("Masukkan nama produk terlebih dahulu.");return ""}
+ const fmt=socialFormats[$("socialFormat").value],aud=$("socialAudience").value.trim()||"calon pembeli yang membutuhkan produk ini",facts=$("socialBenefit").value.trim()||"Jelaskan fitur dan detail produk berdasarkan informasi resmi yang tersedia",tone=$("socialTone").value,link=$("socialLink").value.trim();
+ const hook=fmt.hook.replaceAll("{product}",product);
+ const script=`[HOOK — 0–3 DETIK]
+${hook}
+
+[ISI — 3–15 DETIK]
+Kenalkan ${product} kepada ${aud}. ${fmt.angle}
+Soroti fakta produk berikut: ${facts}. Tampilkan detail produk secara jelas dan gunakan demonstrasi yang benar-benar sesuai dengan fungsi produk.
+
+[PENUTUP — 15–20 DETIK]
+Kalau detailnya sesuai kebutuhanmu, cek informasi lengkap dan pertimbangkan sebelum membeli.
+
+[ARAHAN PRODUKSI]
+Gaya komunikasi: ${tone}. Format: video vertikal 9:16. Gunakan subtitle singkat, potongan visual yang dinamis, dan tampilkan produk secara jelas.`;
+ const caption=`Lagi cari ${product}? ✨
+
+${facts}. Cek detail dan sesuaikan dengan kebutuhanmu sebelum membeli.
+
+Simpan konten ini sebagai referensi.
+
+#ReviewProduk #RekomendasiProduk #BelanjaCerdas`;
+ const visual=`IDE VISUAL: ${fmt.name}
+1. Opening: close-up produk atau situasi yang relevan dengan audiens.
+2. Middle: detail fisik, fitur, atau demonstrasi faktual.
+3. Ending: hero product shot dengan CTA yang jelas.
+
+TARGET AUDIENS: ${aud}
+TONE: ${tone}
+CTA: Lihat detail produk / cek keranjang.`;
+ currentSocialText=`PAYUNG AI STUDIO — CONTENT KIT
+PRODUK: ${product}
+FORMAT: ${fmt.name}
+${link?"LINK REFERENSI: "+link+"\n":""}
+HOOK:
+${hook}
+
+SCRIPT:
+${script}
+
+CAPTION:
+${caption}
+
+IDE VISUAL:
+${visual}
+
+CATATAN: Periksa harga, stok, spesifikasi, dan klaim sebelum dipublikasikan.`;
+ $("socialOutput").textContent=currentSocialText;return currentSocialText;
+}
+function getVault(){return safeRead(VAULT_KEY,[])}
+function updateVault(){
+ const vault=getVault(),q=($("vaultSearch")?.value||"").toLowerCase(),filtered=vault.filter(x=>(x.product+" "+x.format).toLowerCase().includes(q));
+ $("vaultCount").textContent=vault.length;$("scheduledCount").textContent=currentCalendar.filter(x=>x.status!=="Belum dijadwalkan").length;
+ $("vaultList").innerHTML=filtered.length?filtered.slice().reverse().map(item=>`<div class="vault-item"><strong>${escapeHtml(item.product)} — ${escapeHtml(item.format)}</strong><small>${new Date(item.createdAt).toLocaleString("id-ID")} · ${escapeHtml(item.caption||"").slice(0,100)}</small><div class="vault-actions"><button class="copy-small" data-vault-copy="${item.id}">Salin</button><button class="copy-small" data-vault-share="${item.id}">Bagikan</button><button class="copy-small" data-vault-delete="${item.id}">Hapus</button></div></div>`).join(""):'<div class="empty">Belum ada konten yang cocok.</div>';
+ const sel=$("metricContent"),old=sel.value;sel.innerHTML=vault.length?'<option value="">Pilih konten…</option>'+vault.map(x=>`<option value="${x.id}">${escapeHtml(x.product)} — ${escapeHtml(x.format)}</option>`).join(""):'<option value="">Belum ada konten</option>';if(vault.some(x=>x.id===old))sel.value=old;
+ const metrics=safeRead(METRIC_KEY,{});let views=0,orders=0;Object.values(metrics).forEach(m=>{views+=Number(m.views)||0;orders+=Number(m.orders)||0});$("conversionCount").textContent=orders.toLocaleString("id-ID");$("metricSummary").textContent=`Total views tercatat: ${views.toLocaleString("id-ID")} · Pesanan: ${orders.toLocaleString("id-ID")}`;
+ $("vaultList").querySelectorAll("[data-vault-copy]").forEach(b=>b.onclick=()=>{const x=getVault().find(v=>v.id===b.dataset.vaultCopy);if(x)copyText(x.text)});
+ $("vaultList").querySelectorAll("[data-vault-share]").forEach(b=>b.onclick=async()=>{const x=getVault().find(v=>v.id===b.dataset.vaultShare);if(x)await shareText(x.text,x.product)});
+ $("vaultList").querySelectorAll("[data-vault-delete]").forEach(b=>b.onclick=()=>{safeWrite(VAULT_KEY,getVault().filter(v=>v.id!==b.dataset.vaultDelete));updateVault();toast("Konten dihapus dari Vault.")});
+}
+function saveSocial(){if(!currentSocialText){toast("Buat konten terlebih dahulu.");return}const item={id:"v"+Date.now(),product:$("socialProduct").value.trim(),format:socialFormats[$("socialFormat").value].name,caption:currentSocialText.split("CAPTION:\n")[1]?.split("\n\nIDE VISUAL:")[0]||"",text:currentSocialText,createdAt:Date.now()};const vault=getVault();vault.push(item);if(safeWrite(VAULT_KEY,vault)){updateVault();toast("Konten disimpan ke Content Vault.")}}
+async function shareText(text,title){if(navigator.share){try{await navigator.share({title:title||"Payung AI Studio",text});return}catch(e){if(e.name==="AbortError")return}}copyText(text);toast("Fitur bagikan tidak tersedia; teks disalin.")}
+function buildCalendar(){
+ const product=$("calendarProduct").value.trim()||$("socialProduct").value.trim();if(!product){toast("Masukkan nama produk untuk kalender.");return}
+ const start=$("calendarStart").value?new Date($("calendarStart").value+"T12:00:00"):new Date();const angles=["Review jujur: siapa yang cocok?","POV: kebutuhan sehari-hari","Battle: bandingkan fitur","Unboxing dan first impression","3 alasan mempertimbangkan produk","Detail bahan atau desain","FAQ: jawab pertanyaan umum","Problem-solution yang realistis","Demo cara penggunaan","Mitos vs fakta berdasarkan sumber","Budget check dan value","Cerita pengalaman pengguna yang nyata","Behind the product","Close-up detail produk","Checklist sebelum membeli","Perbandingan varian","Kesalahan memilih produk","Kelebihan dan keterbatasan","Gift idea atau rekomendasi","Cara merawat produk","Review setelah penggunaan","Jawab komentar audiens","Top 3 fitur favorit","Alternatif sesuai kebutuhan","Product showcase cinematic","Before-after hanya jika terverifikasi","Unboxing part 2","Ringkasan spesifikasi","CTA cek detail produk","Recap dan rekomendasi akhir"];
+ currentCalendar=angles.map((angle,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return {day:i+1,date:d.toISOString().slice(0,10),angle,product,status:"Belum dijadwalkan"}});
+ safeWrite(CAL_KEY,currentCalendar);renderCalendar();toast("Kalender 30 hari berhasil dibuat.");
+}
+function renderCalendar(){
+ currentCalendar=safeRead(CAL_KEY,[]);$("calendarSummary").textContent=currentCalendar.length?`${currentCalendar.length} ide konten untuk ${currentCalendar[0].product}. Status dapat diperbarui per hari.`:"Belum ada kalender yang dibuat.";
+ $("calendarList").innerHTML=currentCalendar.length?currentCalendar.map(x=>`<div class="calendar-day"><div class="dayno">${String(x.day).padStart(2,"0")}</div><div><b>${escapeHtml(x.angle)}</b><small>${new Date(x.date+"T12:00:00").toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})} · ${escapeHtml(x.product)}</small></div><select data-calendar-status="${x.day}"><option ${x.status==="Belum dijadwalkan"?"selected":""}>Belum dijadwalkan</option><option ${x.status==="Draft"?"selected":""}>Draft</option><option ${x.status==="Siap posting"?"selected":""}>Siap posting</option><option ${x.status==="Sudah posting"?"selected":""}>Sudah posting</option></select></div>`).join(""):'<div class="empty">Generate kalender untuk melihat 30 ide posting.</div>';
+ $("calendarList").querySelectorAll("[data-calendar-status]").forEach(sel=>sel.onchange=()=>{const day=Number(sel.dataset.calendarStatus),row=currentCalendar.find(x=>x.day===day);if(row){row.status=sel.value;safeWrite(CAL_KEY,currentCalendar);updateVault()}});updateVault();
+}
+$("makeSocial").addEventListener("click",createSocialContent);
+$("copySocial").addEventListener("click",()=>currentSocialText?copyText(currentSocialText):toast("Buat konten terlebih dahulu."));
+$("saveSocial").addEventListener("click",saveSocial);
+$("shareSocial").addEventListener("click",()=>currentSocialText?shareText(currentSocialText,$("socialProduct").value):toast("Buat konten terlebih dahulu."));
+$("vaultSearch").addEventListener("input",updateVault);
+$("makeCalendar").addEventListener("click",buildCalendar);
+$("resetCalendar").addEventListener("click",()=>{currentCalendar=[];safeWrite(CAL_KEY,[]);renderCalendar();toast("Kalender diatur ulang.")});
+$("exportCalendar").addEventListener("click",()=>{if(!currentCalendar.length){toast("Belum ada kalender.");return}const txt=currentCalendar.map(x=>`Hari ${x.day} | ${x.date} | ${x.angle} | ${x.status}`).join("\n");downloadText("payung-calendar-30-hari.txt",txt)});
+function downloadText(name,text){const a=document.createElement("a"),url=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+$("exportVault").addEventListener("click",()=>{const data=getVault();if(!data.length){toast("Content Vault masih kosong.");return}downloadJson("payung-content-vault.json",{app:"Payung AI Studio",version:"3.0",items:data,metrics:safeRead(METRIC_KEY,{})})});
+$("clearVault").addEventListener("click",()=>{if(!confirm("Hapus seluruh riwayat Content Vault di perangkat ini?"))return;safeWrite(VAULT_KEY,[]);updateVault();toast("Content Vault dikosongkan.")});
+$("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value;if(!id){toast("Pilih konten terlebih dahulu.");return}const data=safeRead(METRIC_KEY,{});data[id]={views:Math.max(0,Number($("metricViews").value)||0),clicks:Math.max(0,Number($("metricClicks").value)||0),orders:Math.max(0,Number($("metricOrders").value)||0),revenue:Math.max(0,Number($("metricRevenue").value)||0),updatedAt:Date.now()};if(safeWrite(METRIC_KEY,data)){updateVault();toast("Performa aktual tersimpan.")}});
+$("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=safeRead(METRIC_KEY,{})[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
+$("calendarStart").value=new Date().toISOString().slice(0,10);
+currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();updateVault();
+
+
+/* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + Gemini */
+const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
+const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
+const PAYUNG_GENERATE_URL="/generate";
+let payungSupabase=null, payungSession=null, payungSyncTimer=null, payungWorkspaceLoading=false;
+function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
+async function payungRefreshAccount(){
+ if(!payungSupabase)return;
+ const {data:{session}}=await payungSupabase.auth.getSession();payungSession=session;
+ if(session){await payungLoadWorkspace();}
+ const logged=!!session;
+ $("authSignOut").hidden=!logged;
+ $("authUserLabel").textContent=logged?(session.user.email||"Pengguna"):"Guest";
+ $("authAiLabel").textContent=logged?"Terhubung":"Offline";
+ $("authCreditLabel").textContent="—";
+ if(logged){
+  const {data,error}=await payungSupabase.from("ai_credits").select("balance").eq("user_id",session.user.id).maybeSingle();
+  if(!error && data) $("authCreditLabel").textContent=String(data.balance);
+  else $("authCreditLabel").textContent="Belum tersedia";
+  payungStatus("Login sebagai "+session.user.email+". Kredit AI ditampilkan dari database Supabase.");
+ } else payungStatus("Belum login. Generator draft lokal tetap tersedia.");
+}
+async function payungLoadWorkspace(){
+ if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
+ payungWorkspaceLoading=true;
+ try{
+  const {data,error}=await payungSupabase.from("user_workspace").select("vault,calendar,metrics").eq("user_id",payungSession.user.id).maybeSingle();
+  if(error)throw error;
+  if(data){localStorage.setItem(VAULT_KEY,JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(CAL_KEY,JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(METRIC_KEY,JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();}
+  else {const initial={user_id:payungSession.user.id,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});if(saveError)throw saveError;}
+ }catch(e){payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil: "+e.message)}
+ finally{payungWorkspaceLoading=false}
+}
+async function payungSyncWorkspace(){
+ if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
+ clearTimeout(payungSyncTimer);
+ payungSyncTimer=setTimeout(async()=>{
+  const payload={user_id:payungSession.user.id,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
+  const {error}=await payungSupabase.from("user_workspace").upsert(payload,{onConflict:"user_id"});
+  if(error)payungStatus("Data tersimpan di perangkat, tetapi sinkronisasi cloud gagal: "+error.message);
+ },700);
+}
+async function payungAuthInit(){
+ if(!window.supabase?.createClient){payungStatus("Library autentikasi belum termuat. Muat ulang halaman.");return}
+ payungSupabase=window.supabase.createClient(PAYUNG_SUPABASE_URL,PAYUNG_SUPABASE_KEY);
+ payungSupabase.auth.onAuthStateChange(()=>setTimeout(payungRefreshAccount,0));
+ await payungRefreshAccount();
+}
+$("authSignIn").addEventListener("click",async()=>{
+ if(!payungSupabase){payungStatus("Autentikasi belum siap. Muat ulang halaman.");return}
+ const email=$("authEmail").value.trim(),password=$("authPassword").value;
+ if(!email||!password){payungStatus("Isi email dan password.");return}
+ payungStatus("Sedang masuk...");
+ const {error}=await payungSupabase.auth.signInWithPassword({email,password});
+ if(error)payungStatus("Login gagal: "+error.message);else await payungRefreshAccount();
+});
+$("authSignUp").addEventListener("click",async()=>{
+ if(!payungSupabase){payungStatus("Autentikasi belum siap. Muat ulang halaman.");return}
+ const email=$("authEmail").value.trim(),password=$("authPassword").value;
+ if(!email||password.length<8){payungStatus("Isi email valid dan password minimal 8 karakter.");return}
+ payungStatus("Mendaftarkan akun...");
+ const {data,error}=await payungSupabase.auth.signUp({email,password});
+ if(error)payungStatus("Pendaftaran gagal: "+error.message);
+ else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
+ else payungStatus("Pendaftaran diterima. Periksa email untuk verifikasi, lalu login.");
+});
+$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;await payungSupabase.auth.signOut();await payungRefreshAccount()});
+async function payungGenerateAI(action,prompt){
+ if(!payungSupabase){toast("Autentikasi belum siap.");return null}
+ const {data:{session}}=await payungSupabase.auth.getSession();
+ if(!session){toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null}
+ const button=$("makeSocialAI");button.disabled=true;button.textContent="Gemini sedang membuat konten...";
+ try{
+  const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"Permintaan AI gagal");
+  $("authCreditLabel").textContent=String(data.credits_remaining??"—");
+  $("authAiLabel").textContent="Aktif";
+  return data.output;
+ }catch(error){toast(error.message);return null}
+ finally{button.disabled=false;button.textContent="✦ Generate dengan Gemini AI"}
+}
+$("generateAIStoryboard").addEventListener("click",async()=>{
+ const product=$("productName").value.trim();if(!product){toast("Isi nama produk pada brief cinematic terlebih dahulu.");return}
+ const fields=["productName","category","duration","ratio","target","style","camera","lighting","voice","music","extra"];
+ const brief=fields.map(id=>{const el=$(id);return el?`${id}: ${el.value}`:""}).filter(Boolean).join("\\n");
+ const prompt=`Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:\\n${brief}\\nBerikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
+ const output=await payungGenerateAI("storyboard",prompt);
+ if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard Gemini berhasil dibuat.")}
+});
+$("makeCalendarAI").addEventListener("click",async()=>{
+ const product=$("calendarProduct").value.trim()||$("socialProduct").value.trim();if(!product){toast("Masukkan nama produk untuk kalender.");return}
+ const start=$("calendarStart").value||new Date().toISOString().slice(0,10);
+ const prompt=`Buat strategi kalender konten 30 hari untuk produk ${product}. Mulai tanggal ${start}. Susun tabel hari/tanggal, ide konten, hook, format video, CTA, dan catatan visual. Variasikan edukasi, review jujur, POV, unboxing, demo, perbandingan faktual, FAQ, dan showcase. Jangan membuat klaim atau spesifikasi yang tidak diberikan. Tandai fakta yang harus diverifikasi.`;
+ const output=await payungGenerateAI("calendar",prompt);
+ if(output){$("calendarAIOutput").textContent=output;toast("Strategi kalender Gemini berhasil dibuat.")}
+});
+$("makeSocialAI").addEventListener("click",async()=>{
+ const product=$("socialProduct").value.trim();
+ if(!product){$("socialProduct").focus();toast("Masukkan nama produk terlebih dahulu.");return}
+ const prompt=`Anda adalah creative strategist dan copywriter iklan social-commerce profesional. Buat paket konten siap produksi dalam Bahasa Indonesia.
+Produk: ${product}
+Link referensi (jangan mengarang isi link): ${$("socialLink").value.trim()||"Tidak tersedia"}
+Target audiens: ${$("socialAudience").value.trim()||"Belum ditentukan"}
+Fakta/keunggulan yang diberikan pengguna: ${$("socialBenefit").value.trim()||"Tidak diberikan; jangan mengarang spesifikasi atau klaim"}
+Format: ${socialFormats[$("socialFormat").value]?.name||"Konten social commerce"}
+Gaya komunikasi: ${$("socialTone").value}
+Buat: 3 alternatif hook, script video 20 detik dengan timestamp dan arahan visual, caption, CTA, teks overlay, serta catatan verifikasi klaim. Hindari klaim kesehatan/hasil yang tidak dibuktikan. Jika informasi tidak tersedia, tandai [PERLU VERIFIKASI].`;
+ const output=await payungGenerateAI("social-content",prompt);
+ if(output){currentSocialText="PAYUNG AI STUDIO — GEMINI AI\n\n"+output;$("socialOutput").textContent=currentSocialText;toast("Konten berhasil dibuat oleh Gemini AI.");}
+});
+payungAuthInit();
+
+$("year").textContent=new Date().getFullYear();
+renderCameraChips();renderLibrary();updateSummary();
+</script>
+</body>
+</html>
