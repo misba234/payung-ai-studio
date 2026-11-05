@@ -602,7 +602,7 @@ currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();upda
 /* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + Gemini */
 const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
 const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
-const PAYUNG_WORKER_URL="https://payung-ai-studio.misbaahmed17.workers.dev";
+const PAYUNG_GENERATE_URL="/generate";
 let payungSupabase=null, payungSession=null, payungSyncTimer=null, payungWorkspaceLoading=false;
 function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
 async function payungRefreshAccount(){
@@ -672,7 +672,7 @@ async function payungGenerateAI(action,prompt){
  if(!session){toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null}
  const button=$("makeSocialAI");button.disabled=true;button.textContent="Gemini sedang membuat konten...";
  try{
-  const response=await fetch(PAYUNG_WORKER_URL+"/generate",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
+  const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||"Permintaan AI gagal");
   $("authCreditLabel").textContent=String(data.credits_remaining??"—");
