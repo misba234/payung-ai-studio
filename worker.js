@@ -62,7 +62,7 @@ async function generate(request, env) {
       headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.75, maxOutputTokens: 6000 }
+        generationConfig: { maxOutputTokens: 6000 }
       })
     });
   } catch {
