@@ -52,15 +52,9 @@ async function generate(request, env) {
   }
   if (!authResponse.ok) return reply({ error: "Sesi login tidak valid. Silakan login ulang." }, 401, origin);
   const user = await authResponse.json();
+  if (!user?.id) return reply({ error: "Identitas pengguna tidak valid." }, 401, origin);
 
-  const creditResponse = await fetch(SUPABASE_URL + "/rest/v1/ai_credits?select=balance&user_id=eq." + encodeURIComponent(user.id), {
-    headers: { "apikey": SUPABASE_PUBLISHABLE_KEY, "Authorization": "Bearer " + token }
-  });
-  if (!creditResponse.ok) return reply({ error: "Tidak dapat memeriksa kredit AI." }, 502, origin);
-  const creditRows = await creditResponse.json();
-  const balance = Number(creditRows?.[0]?.balance ?? 0);
-  if (balance < 1) return reply({ error: "Kredit AI Anda habis." }, 402, origin);
-
+  // Call Gemini first. Failed generations never consume credits.
   let geminiResponse;
   try {
     geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent", {
@@ -77,21 +71,31 @@ async function generate(request, env) {
   const geminiData = await geminiResponse.json().catch(() => ({}));
   if (!geminiResponse.ok) {
     const message = geminiData?.error?.message || "Gemini gagal memproses permintaan.";
-    return reply({ error: message, credits_remaining: balance }, 502, origin);
+    return reply({ error: message, provider_status: geminiResponse.status }, 502, origin);
   }
   const output = (geminiData?.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("\n").trim();
   if (!output) return reply({ error: "Gemini tidak menghasilkan teks. Kredit tidak dipotong." }, 502, origin);
 
+  // Debit only via service-role protected RPC; identity is revalidated by the SQL function.
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    return reply({ error: "Secret runtime SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi pada Worker." }, 503, origin);
+  }
   const debitResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_ai_credit", {
     method: "POST",
     headers: {
-      "apikey": SUPABASE_PUBLISHABLE_KEY,
-      "Authorization": "Bearer " + token,
+      "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
+      "Authorization": "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ p_user_id: user.id, p_action: action, p_model: GEMINI_MODEL })
   });
-  if (!debitResponse.ok) return reply({ error: "Hasil AI tersedia, tetapi pemotongan kredit gagal. Jangan kirim ulang sebelum memeriksa saldo." }, 502, origin);
+  if (!debitResponse.ok) {
+    const detail = await debitResponse.text().catch(() => "");
+    if (debitResponse.status === 400 || debitResponse.status === 403) {
+      return reply({ error: "Kredit tidak dapat dipotong. Pastikan sesi dan saldo akun valid." }, 403, origin);
+    }
+    return reply({ error: "Hasil AI tersedia, tetapi pemotongan kredit gagal. Hubungi administrator sebelum mengulang.", detail: detail.slice(0, 300) }, 502, origin);
+  }
   const remaining = await debitResponse.json();
   return reply({ output, model: GEMINI_MODEL, credits_remaining: Number(remaining) }, 200, origin);
 }
@@ -100,6 +104,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/generate") return generate(request, env);
-    return env.ASSETS.fetch(request);
+    if (env.ASSETS) return env.ASSETS.fetch(request);
+    if (url.pathname === "/" || url.pathname === "/health") {
+      return new Response(JSON.stringify({ ok: true, service: "Payung AI Studio API", status: "online" }), {
+        headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+      });
+    }
+    return new Response("Not found", { status: 404 });
   }
 };
