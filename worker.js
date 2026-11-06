@@ -54,7 +54,48 @@ async function generate(request, env) {
   const user = await authResponse.json();
   if (!user?.id) return reply({ error: "Identitas pengguna tidak valid." }, 401, origin);
 
-  // Call Gemini first. Failed generations never consume credits.
+  // Reserve one credit atomically before calling Gemini.
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    return reply({ error: "Secret runtime SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi pada Worker." }, 503, origin);
+  }
+  const rpcHeaders = {
+    "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
+    "Authorization": "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY,
+    "Content-Type": "application/json"
+  };
+  let reserveResponse;
+  try {
+    reserveResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_ai_credit", {
+      method: "POST", headers: rpcHeaders,
+      body: JSON.stringify({ p_user_id: user.id, p_action: action, p_model: GEMINI_MODEL })
+    });
+  } catch {
+    return reply({ error: "Tidak dapat mengamankan kredit. Permintaan dibatalkan sebelum memanggil Gemini." }, 502, origin);
+  }
+  if (!reserveResponse.ok) {
+    const detail = await reserveResponse.text().catch(() => "");
+    if (reserveResponse.status === 400 || reserveResponse.status === 403) {
+      return reply({ error: "Kredit tidak cukup atau akun tidak valid.", detail: detail.slice(0, 200) }, 403, origin);
+    }
+    return reply({ error: "Gagal mengamankan kredit. Permintaan dibatalkan.", detail: detail.slice(0, 200) }, 502, origin);
+  }
+  const reservation = await reserveResponse.json().catch(() => null);
+  const reservationId = Number(reservation?.reservation_id);
+  if (!Number.isSafeInteger(reservationId) || reservationId <= 0) {
+    return reply({ error: "Respons reservasi kredit tidak valid. Hubungi administrator." }, 502, origin);
+  }
+
+  async function refundReservation() {
+    try {
+      const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/refund_ai_credit", {
+        method: "POST", headers: rpcHeaders,
+        body: JSON.stringify({ p_reservation_id: reservationId })
+      });
+      return response.ok;
+    } catch { return false; }
+  }
+
+  // Gemini is called only after a successful credit reservation.
   let geminiResponse;
   try {
     geminiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + GEMINI_MODEL + ":generateContent", {
@@ -66,38 +107,37 @@ async function generate(request, env) {
       })
     });
   } catch {
-    return reply({ error: "Tidak dapat menghubungi Gemini. Kredit tidak dipotong." }, 502, origin);
+    const refunded = await refundReservation();
+    return reply({ error: refunded ? "Tidak dapat menghubungi Gemini. Kredit telah dikembalikan." : "Tidak dapat menghubungi Gemini dan pengembalian kredit belum terkonfirmasi. Hubungi administrator." }, 502, origin);
   }
+
   const geminiData = await geminiResponse.json().catch(() => ({}));
   if (!geminiResponse.ok) {
+    const refunded = await refundReservation();
     const message = geminiData?.error?.message || "Gemini gagal memproses permintaan.";
-    return reply({ error: message, provider_status: geminiResponse.status }, 502, origin);
+    return reply({ error: message, provider_status: geminiResponse.status, credit_refunded: refunded }, 502, origin);
   }
-  const output = (geminiData?.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("\n").trim();
-  if (!output) return reply({ error: "Gemini tidak menghasilkan teks. Kredit tidak dipotong." }, 502, origin);
 
-  // Debit only via service-role protected RPC; identity is revalidated by the SQL function.
-  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-    return reply({ error: "Secret runtime SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi pada Worker." }, 503, origin);
+  const output = (geminiData?.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("\n").trim();
+  if (!output) {
+    const refunded = await refundReservation();
+    return reply({ error: "Gemini tidak menghasilkan teks.", credit_refunded: refunded }, 502, origin);
   }
-  const debitResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_ai_credit", {
-    method: "POST",
-    headers: {
-      "apikey": env.SUPABASE_SERVICE_ROLE_KEY,
-      "Authorization": "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ p_user_id: user.id, p_action: action, p_model: GEMINI_MODEL })
-  });
-  if (!debitResponse.ok) {
-    const detail = await debitResponse.text().catch(() => "");
-    if (debitResponse.status === 400 || debitResponse.status === 403) {
-      return reply({ error: "Kredit tidak dapat dipotong. Pastikan sesi dan saldo akun valid." }, 403, origin);
-    }
-    return reply({ error: "Hasil AI tersedia, tetapi pemotongan kredit gagal. Hubungi administrator sebelum mengulang.", detail: detail.slice(0, 300) }, 502, origin);
+
+  let finalizeResponse;
+  try {
+    finalizeResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/finalize_ai_credit", {
+      method: "POST", headers: rpcHeaders,
+      body: JSON.stringify({ p_reservation_id: reservationId })
+    });
+  } catch {
+    return reply({ error: "Hasil AI dibuat, tetapi finalisasi kredit belum terkonfirmasi. Jangan ulangi permintaan; hubungi administrator.", reservation_id: reservationId }, 502, origin);
   }
-  const remaining = await debitResponse.json();
-  return reply({ output, model: GEMINI_MODEL, credits_remaining: Number(remaining) }, 200, origin);
+  if (!finalizeResponse.ok || (await finalizeResponse.json().catch(() => false)) !== true) {
+    return reply({ error: "Hasil AI dibuat, tetapi finalisasi kredit gagal. Jangan ulangi permintaan; hubungi administrator.", reservation_id: reservationId }, 502, origin);
+  }
+
+  return reply({ output, model: GEMINI_MODEL, credits_remaining: Number(reservation.credits_remaining) }, 200, origin);
 }
 
 export default {
