@@ -603,6 +603,7 @@ currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();upda
 const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
 const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
 const PAYUNG_GENERATE_URL="https://payung-ai-studio.misbaahmed17.workers.dev/generate";
+const PAYUNG_AUTH_REDIRECT_URL="https://misba234.github.io/payung-ai-studio/";
 let payungSupabase=null, payungSession=null, payungSyncTimer=null, payungWorkspaceLoading=false;
 function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
 async function payungRefreshAccount(){
@@ -660,10 +661,10 @@ $("authSignUp").addEventListener("click",async()=>{
  const email=$("authEmail").value.trim(),password=$("authPassword").value;
  if(!email||password.length<8){payungStatus("Isi email valid dan password minimal 8 karakter.");return}
  payungStatus("Mendaftarkan akun...");
- const {data,error}=await payungSupabase.auth.signUp({email,password});
+ const {data,error}=await payungSupabase.auth.signUp({email,password,options:{emailRedirectTo:PAYUNG_AUTH_REDIRECT_URL}});
  if(error)payungStatus("Pendaftaran gagal: "+error.message);
  else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
- else payungStatus("Pendaftaran diterima. Periksa email untuk verifikasi, lalu login.");
+ else payungStatus("Pendaftaran diterima. Buka email verifikasi terbaru dari Payung AI Studio. Setelah menekan tombol konfirmasi, Anda akan diarahkan kembali ke website ini. Jika tautan lama mengarah ke alamat yang salah, minta email verifikasi baru.");
 });
 $("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;await payungSupabase.auth.signOut();await payungRefreshAccount()});
 async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
