@@ -624,7 +624,8 @@ $("exportVault").addEventListener("click",()=>{const data=getVault();if(!data.le
 $("clearVault").addEventListener("click",()=>{if(!confirm("Hapus seluruh riwayat Content Vault di perangkat ini?"))return;safeWrite(VAULT_KEY,[]);updateVault();toast("Content Vault dikosongkan.")});
 $("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value;if(!id){toast("Pilih konten terlebih dahulu.");return}const data=safeRead(METRIC_KEY,{});data[id]={views:Math.max(0,Number($("metricViews").value)||0),clicks:Math.max(0,Number($("metricClicks").value)||0),orders:Math.max(0,Number($("metricOrders").value)||0),revenue:Math.max(0,Number($("metricRevenue").value)||0),updatedAt:Date.now()};if(safeWrite(METRIC_KEY,data)){updateVault();toast("Performa aktual tersimpan.")}});
 $("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=safeRead(METRIC_KEY,{})[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
-const payungLocalDate=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};\n$("calendarStart").value=payungLocalDate();
+const payungLocalDate=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+$("calendarStart").value=payungLocalDate();
 currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();updateVault();
 
 
