@@ -665,10 +665,12 @@ async function payungLoadWorkspace(){
 async function payungSyncWorkspace(){
  if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
  clearTimeout(payungSyncTimer);
+ const syncUserId=payungSession.user.id;
  payungSyncTimer=setTimeout(async()=>{
-  const payload={user_id:payungSession.user.id,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
+  if(!payungSession||payungSession.user.id!==syncUserId)return;
+  const payload={user_id:syncUserId,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
   const {error}=await payungSupabase.from("user_workspace").upsert(payload,{onConflict:"user_id"});
-  if(error)payungStatus("Data tersimpan di perangkat, tetapi sinkronisasi cloud gagal: "+error.message);
+  if(error&&payungSession?.user?.id===syncUserId)payungStatus("Data tersimpan di perangkat, tetapi sinkronisasi cloud gagal: "+error.message);
  },700);
 }
 async function payungAuthInit(){
