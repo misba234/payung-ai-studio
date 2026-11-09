@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#10131d">
-<meta name="description" content="Payung AI Studio 2.1 Final — generator storyboard, template iklan, penyimpanan otomatis dan backup proyek lokal untuk prompt cinematic.">
+<meta name="description" content="Payung AI Studio — workspace pembuatan konten, storyboard cinematic, kalender, dan penyimpanan cloud dengan Gemini AI.">
 <title>Payung AI Studio 3.1 — AI Content & Cinematic Production</title>
 <style>
 :root{
@@ -127,6 +127,35 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
 .module{margin:38px 0 52px;scroll-margin-top:90px}.module-head{margin-bottom:17px}.module-head h2{font-size:clamp(24px,4vw,34px);margin:8px 0}.module-head p{color:var(--muted);max-width:760px;margin:0;font-size:13px}.module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.module-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}.module-card h3{margin:0 0 8px;font-size:16px}.module-card p{color:var(--muted);font-size:12px}.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric{border-radius:15px;padding:14px;background:#171e2e;border:1px solid var(--line)}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{display:block;font-size:23px;margin-top:5px}.content-output{white-space:pre-wrap;background:#0d1220;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:12px;line-height:1.7;max-height:420px;overflow:auto;color:#e6eafa}.template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.template-card{background:#0d1220;border:1px solid var(--line);border-radius:13px;padding:13px}.template-card b{display:block;font-size:12px}.template-card span{display:block;color:var(--muted);font-size:11px;margin:5px 0 10px}.template-card button{border:0;background:transparent;color:var(--accent2);padding:0;font-weight:800;font-size:11px}.vault-item{padding:14px 0;border-bottom:1px solid rgba(255,255,255,.08)}.vault-item:last-child{border:0}.vault-item strong{font-size:13px}.vault-item small{display:block;color:var(--muted);margin:4px 0 9px}.vault-actions{display:flex;gap:7px;flex-wrap:wrap}.calendar-list{display:grid;gap:8px}.calendar-day{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;background:#0d1220;border:1px solid var(--line);border-radius:12px;padding:11px}.calendar-day .dayno{background:rgba(167,139,250,.15);border-radius:10px;text-align:center;padding:9px 4px;font-weight:900;color:#c4b5fd}.calendar-day b{font-size:12px}.calendar-day small{display:block;color:var(--muted);font-size:10px;margin-top:3px}.calendar-day select{max-width:145px;padding:8px;font-size:11px}.notice{border:1px solid rgba(246,201,120,.3);background:rgba(246,201,120,.07);border-radius:12px;padding:12px;color:#e8d4a9;font-size:11px;line-height:1.6}.module-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.module-actions .btn{font-size:12px;padding:9px 12px}
 @media(max-width:700px){.module-grid{grid-template-columns:1fr}.template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.metric-grid{grid-template-columns:repeat(3,1fr)}.metric{padding:10px}.metric strong{font-size:18px}.calendar-day{grid-template-columns:48px 1fr}.calendar-day select{grid-column:2;max-width:100%;width:100%}}
 
+
+/* Mobile reliability and overflow fixes */
+html,body{max-width:100%;overflow-x:hidden}
+main,.container,.module,.module-card,.panel,.workspace,.module-grid,.metric-grid{min-width:0}
+.module-card,.panel,.metric,.template-card,.scene,.content-output{overflow-wrap:anywhere}
+.metric strong{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+input,select,textarea{max-width:100%;min-width:0}
+button,.btn{max-width:100%;white-space:normal}
+@media(max-width:700px){
+ .metric-grid{grid-template-columns:minmax(0,1fr)}
+ #account .metric-grid{grid-template-columns:minmax(0,1fr)}
+ #account .metric{display:flex;align-items:center;justify-content:space-between;gap:12px}
+ #account .metric strong{text-align:right}
+ .module-card{padding:15px}
+ .module-actions .btn{flex:1 1 auto}
+ .nav{gap:8px}
+ .brand{min-width:0;max-width:calc(100% - 112px);font-size:14px}
+ .brand>span:last-child{min-width:0;overflow-wrap:anywhere}
+ .brand small{font-size:8px;letter-spacing:1px}
+ .pill{flex:0 0 auto}
+ .template-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+ .calendar-day{min-width:0}
+}
+@media(max-width:380px){
+ .container{width:calc(100% - 20px)}
+ .template-grid{grid-template-columns:minmax(0,1fr)}
+ .module-actions .btn{width:100%}
+}
+
 </style>
 </head>
 <body>
@@ -169,7 +198,7 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
  </section>
 
  <section id="generator">
-  <div class="section-head"><div><div class="eyebrow">01 / CREATION WORKSPACE</div><h2>Bangun iklan cinematic Anda</h2><p>Isi detail produk dan pilih arah kreatif. Storyboard dibuat langsung di browser.</p></div><span class="pill">NO LOGIN · NO API KEY</span></div>
+  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2>Bangun iklan cinematic Anda</h2><p>Buat draft lokal tanpa kredit atau gunakan Gemini AI setelah login. Hasil dapat disimpan dan disinkronkan ke akun Anda.</p></div><span class="pill">LOKAL + GEMINI AI</span></div>
   <div class="workspace">
    <div class="panel form-panel">
     <div class="form-section">
@@ -251,7 +280,7 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
 
 
  <section class="module" id="content-engine">
-  <div class="module-head"><div class="eyebrow">01 / AI CONTENT ENGINE</div><h2>Satu produk, banyak ide konten.</h2><p>Masukkan detail produk, pilih format, lalu susun hook, script, caption, CTA, dan arahan visual. Mesin ini berjalan secara lokal menggunakan template kreatif—bukan AI cloud.</p></div>
+  <div class="module-head"><div class="eyebrow">02 / AI CONTENT ENGINE</div><h2>Satu produk, banyak ide konten.</h2><p>Buat draft cepat secara lokal atau gunakan Gemini AI untuk menghasilkan variasi hook, script, caption, CTA, dan arahan visual yang lebih mendalam.</p></div>
   <div class="module-grid">
    <div class="module-card">
     <h3>Product brief</h3>
@@ -275,7 +304,7 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
  </section>
 
  <section class="module" id="calendar">
-  <div class="module-head"><div class="eyebrow">02 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Bangun variasi angle dari satu produk. Kalender dibuat di browser dan status posting dapat diubah kapan saja.</p></div>
+  <div class="module-head"><div class="eyebrow">03 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Susun 30 ide posting secara lokal atau minta Gemini AI membuat strategi yang lebih terperinci. Status posting dapat diubah kapan saja.</p></div>
   <div class="module-card">
    <div class="grid2"><div class="field"><label for="calendarProduct">Produk untuk kalender</label><input id="calendarProduct" placeholder="Nama produk"></div><div class="field"><label for="calendarStart">Tanggal mulai</label><input id="calendarStart" type="date"></div></div>
    <button class="btn primary" id="makeCalendar" style="width:100%">Generate kalender 30 hari (Lokal)</button>
@@ -288,7 +317,7 @@ footer{border-top:1px solid rgba(255,255,255,.08);padding:24px 0;color:var(--mut
  </section>
 
  <section class="module" id="vault">
-  <div class="module-head"><div class="eyebrow">03 / CONTENT VAULT</div><h2>Semua ide tersimpan, tidak tercecer.</h2><p>Kelola hasil generator, salin ulang, bagikan, dan ekspor arsip konten dari browser perangkat ini.</p></div>
+  <div class="module-head"><div class="eyebrow">04 / CONTENT VAULT</div><h2>Semua ide tersimpan, tidak tercecer.</h2><p>Kelola hasil generator, salin ulang, bagikan, dan ekspor arsip konten dari browser perangkat ini.</p></div>
   <div class="metric-grid" style="margin-bottom:14px"><div class="metric"><small>Konten tersimpan</small><strong id="vaultCount">0</strong></div><div class="metric"><small>Jadwal aktif</small><strong id="scheduledCount">0</strong></div><div class="metric"><small>Konversi tercatat</small><strong id="conversionCount">0</strong></div></div>
   <div class="module-grid">
    <div class="module-card"><h3>Riwayat konten</h3><div class="field"><input id="vaultSearch" placeholder="Cari nama produk atau format..."></div><div id="vaultList"><div class="empty">Belum ada konten tersimpan.</div></div><div class="module-actions"><button class="btn secondary" id="exportVault">Backup Content Vault</button><button class="btn ghost" id="clearVault">Hapus semua riwayat</button></div></div>
@@ -595,7 +624,7 @@ $("exportVault").addEventListener("click",()=>{const data=getVault();if(!data.le
 $("clearVault").addEventListener("click",()=>{if(!confirm("Hapus seluruh riwayat Content Vault di perangkat ini?"))return;safeWrite(VAULT_KEY,[]);updateVault();toast("Content Vault dikosongkan.")});
 $("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value;if(!id){toast("Pilih konten terlebih dahulu.");return}const data=safeRead(METRIC_KEY,{});data[id]={views:Math.max(0,Number($("metricViews").value)||0),clicks:Math.max(0,Number($("metricClicks").value)||0),orders:Math.max(0,Number($("metricOrders").value)||0),revenue:Math.max(0,Number($("metricRevenue").value)||0),updatedAt:Date.now()};if(safeWrite(METRIC_KEY,data)){updateVault();toast("Performa aktual tersimpan.")}});
 $("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=safeRead(METRIC_KEY,{})[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
-$("calendarStart").value=new Date().toISOString().slice(0,10);
+const payungLocalDate=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};\n$("calendarStart").value=payungLocalDate();
 currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();updateVault();
 
 
@@ -629,7 +658,7 @@ async function payungLoadWorkspace(){
   const {data,error}=await payungSupabase.from("user_workspace").select("vault,calendar,metrics").eq("user_id",payungSession.user.id).maybeSingle();
   if(error)throw error;
   if(data){localStorage.setItem(VAULT_KEY,JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(CAL_KEY,JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(METRIC_KEY,JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();}
-  else {const initial={user_id:payungSession.user.id,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});if(saveError)throw saveError;}
+  else {const initial={user_id:payungSession.user.id,vault:[],calendar:[],metrics:{},updated_at:new Date().toISOString()};const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});if(saveError)throw saveError;localStorage.setItem(VAULT_KEY,"[]");localStorage.setItem(CAL_KEY,"[]");localStorage.setItem(METRIC_KEY,"{}");currentCalendar=[];renderCalendar();updateVault();}
  }catch(e){payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil: "+e.message)}
  finally{payungWorkspaceLoading=false}
 }
@@ -666,7 +695,7 @@ $("authSignUp").addEventListener("click",async()=>{
  else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
  else payungStatus("Pendaftaran diterima. Buka email verifikasi terbaru dari Payung AI Studio. Setelah menekan tombol konfirmasi, Anda akan diarahkan kembali ke website ini. Jika tautan lama mengarah ke alamat yang salah, minta email verifikasi baru.");
 });
-$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;await payungSupabase.auth.signOut();await payungRefreshAccount()});
+$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;clearTimeout(payungSyncTimer);const {error}=await payungSupabase.auth.signOut();if(error){payungStatus("Gagal keluar: "+error.message);return}localStorage.removeItem(VAULT_KEY);localStorage.removeItem(CAL_KEY);localStorage.removeItem(METRIC_KEY);currentCalendar=[];renderCalendar();updateVault();await payungRefreshAccount()});
 async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
  if(!payungSupabase){toast("Autentikasi belum siap.");return null}
  const {data:{session}}=await payungSupabase.auth.getSession();
