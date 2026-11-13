@@ -23,7 +23,6 @@ async function generate(request, env) {
   if (!ALLOWED_ORIGINS.has(origin)) return reply({ error: "Origin tidak diizinkan." }, 403, origin);
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
   if (request.method !== "POST") return reply({ error: "Method tidak diizinkan." }, 405, origin);
-  if (!env.GEMINI_API_KEY) return reply({ error: "Secret runtime GEMINI_API_KEY belum dikonfigurasi pada Worker." }, 503, origin);
 
   const authorization = request.headers.get("Authorization") || "";
   if (!authorization.startsWith("Bearer ")) return reply({ error: "Silakan login terlebih dahulu." }, 401, origin);
@@ -53,6 +52,7 @@ async function generate(request, env) {
   if (!authResponse.ok) return reply({ error: "Sesi login tidak valid. Silakan login ulang." }, 401, origin);
   const user = await authResponse.json();
   if (!user?.id) return reply({ error: "Identitas pengguna tidak valid." }, 401, origin);
+  if (!env.GEMINI_API_KEY) return reply({ error: "Secret runtime GEMINI_API_KEY belum dikonfigurasi pada Worker." }, 503, origin);
 
   // Reserve one credit atomically before calling Gemini.
   if (!env.SUPABASE_SERVICE_ROLE_KEY) {

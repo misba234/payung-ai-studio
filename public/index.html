@@ -192,7 +192,7 @@ button,.btn{max-width:100%;white-space:normal}
     <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 8 karakter"></div>
    </div>
    <div class="module-actions"><button class="btn primary" id="authSignIn">Masuk</button><button class="btn secondary" id="authSignUp">Daftar akun</button><button class="btn ghost" id="authSignOut" hidden>Keluar</button></div>
-   <p id="authStatus" class="notice" style="margin-top:12px">Status: belum login. Generator lokal tetap bisa digunakan tanpa akun.</p>
+   <p id="authStatus" class="notice" style="margin-top:12px">Status: belum login. Generator lokal tetap bisa digunakan tanpa akun.</p><p class="note">Fitur lokal tetap di perangkat ini. Saat memakai Gemini, prompt teks dikirim ke backend Payung AI Studio dan Google Gemini; Vault, kalender, dan metrik disinkronkan ke Supabase saat login. Jangan masukkan password atau data rahasia.</p>
    <div class="metric-grid" style="margin-top:12px"><div class="metric"><small>Akun</small><strong id="authUserLabel" style="font-size:14px">Guest</strong></div><div class="metric"><small>Kredit AI</small><strong id="authCreditLabel">—</strong></div><div class="metric"><small>AI Cloud</small><strong id="authAiLabel" style="font-size:14px">Offline</strong></div></div>
   </div>
  </section>
@@ -339,14 +339,14 @@ button,.btn{max-width:100%;white-space:normal}
  <section id="about" style="margin:35px 0 55px">
   <div class="panel" style="padding:22px">
    <div class="eyebrow">ABOUT THE STUDIO</div><h2 style="margin:10px 0">Creative tools for every product story.</h2>
-   <p style="max-width:800px;color:var(--muted);font-size:13px">Payung AI Studio adalah creative workspace untuk ide konten produk, script, caption, kalender posting, Content Vault, pencatatan performa manual, storyboard, dan prompt video iklan. Fitur lokal berjalan di browser tanpa akun, backend, atau API key. Integrasi AI cloud dan marketplace membutuhkan backend serta API terpisah.</p>
+   <p style="max-width:800px;color:var(--muted);font-size:13px">Payung AI Studio adalah creative workspace untuk ide konten produk, script, caption, kalender posting, Content Vault, pencatatan performa manual, storyboard, dan prompt video iklan. Fitur lokal berjalan di browser tanpa akun. Saat login, Vault, kalender, dan metrik disinkronkan ke Supabase; proyek cinematic tetap tersimpan lokal per akun di browser. Fitur Gemini mengirim prompt teks ke backend Payung AI Studio dan Google Gemini. Link marketplace tidak diambil otomatis.</p>
    <p style="color:var(--muted);font-size:11px">Catatan: Payung AI Studio bukan produk resmi Google dan tidak berafiliasi dengan Google. Nama Google Flow digunakan hanya untuk menjelaskan kompatibilitas alur kerja prompt.</p>
   </div>
  </section>
 </main>
 <footer><div class="container footer-inner"><span>© <span id="year"></span> Payung AI Studio. Made for creators.</span><span>Standalone HTML · Public · Free · No account required</span></div></footer>
 <div class="toast" id="toast">Tersalin ke clipboard</div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0" integrity="sha384-gnyZit14c5lnGcarmA166QQjjJXpucw25ogZXuwH3HxxY904zHkBqmxVpelsPorb" crossorigin="anonymous"></script>
 <script>
 const techniques = [
 ["Camera Movement","Dolly In","Kamera bergerak mendekati subjek secara halus."],["Camera Movement","Dolly Out","Kamera menjauh untuk memperlihatkan konteks adegan."],["Camera Movement","Orbit Shot","Kamera mengitari produk dengan gerakan stabil."],["Camera Movement","Tracking Shot","Kamera mengikuti gerakan subjek."],["Camera Movement","Pan Left","Kamera menggeser pandangan ke kiri."],["Camera Movement","Pan Right","Kamera menggeser pandangan ke kanan."],["Camera Movement","Tilt Up","Kamera menengadah dari bawah ke atas."],["Camera Movement","Tilt Down","Kamera bergerak dari atas ke bawah."],["Camera Movement","Crane Up","Kamera naik secara vertikal dan dramatis."],["Camera Movement","Crane Down","Kamera turun secara vertikal dan terkontrol."],["Camera Movement","Drone Flyover","Kamera udara melintasi lokasi."],
@@ -426,7 +426,64 @@ function updateSummary(){
  $("sumRatio").textContent=$("platform").value.includes("9:16")?"9:16":$("platform").value.includes("16:9")?"16:9":$("platform").value.includes("4:5")?"4:5":"1:1";
 }
 // PAYUNG AI STUDIO 2.1 FINAL — templates, local project storage, autosave and portable backup
-const PROJECTS_KEY="payungAIStudioProjectsV2";
+const PROJECTS_KEY="payungAIStudioProjectsV2",DRAFT_KEY="payungAIStudioDraftV21";
+let payungSession=null,payungDraftRestored=false,payungWorkspaceEditVersion=0,payungWorkspaceEditUserId="guest",payungSessionVerified=false,payungSessionLocked=false;
+const storageKeyFor=key=>`${key}:${payungSession?.user?.id||"guest"}`;
+const projectStorageKey=()=>storageKeyFor(PROJECTS_KEY);
+const draftStorageKey=()=>storageKeyFor(DRAFT_KEY);
+function recoverLegacyValue(base,raw){try{localStorage.setItem(`payungLegacyRecovery:${base}:guest`,raw)}catch(e){}}
+function saveLegacyDraftAsProject(draft){
+ if(!draft?.project)return;
+ try{
+  const key=projectStorageKey(),raw=localStorage.getItem(key);let store={};
+  if(raw!==null){const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("Invalid legacy project store");store=parsed;}
+  const product=draft.projectName||draft.project.productName||"Draft";let name=`${product} (draft lama)`,i=2;
+  while(Object.prototype.hasOwnProperty.call(store,name))name=`${product} (draft lama ${i++})`;
+  store[name]=draft.project;localStorage.setItem(key,JSON.stringify(store));
+ }catch(e){recoverLegacyValue(DRAFT_KEY,JSON.stringify(draft));}
+}
+function mergeLegacyLocalValue(base,legacyRaw,currentRaw){
+ if(currentRaw===null)return legacyRaw;
+ if(legacyRaw===currentRaw)return currentRaw;
+ try{
+  const legacy=JSON.parse(legacyRaw),current=JSON.parse(currentRaw);
+  if(base===PROJECTS_KEY&&legacy&&current&&typeof legacy==="object"&&typeof current==="object"&&!Array.isArray(legacy)&&!Array.isArray(current)){
+   const merged=Object.assign(Object.create(null),legacy);
+   for(const [name,value] of Object.entries(current)){
+    if(Object.prototype.hasOwnProperty.call(merged,name)&&JSON.stringify(merged[name])!==JSON.stringify(value)){
+     let legacyName=`${name} (legacy)`,i=2;while(Object.prototype.hasOwnProperty.call(merged,legacyName))legacyName=`${name} (legacy ${i++})`;
+     merged[legacyName]=merged[name];
+    }
+    merged[name]=value;
+   }
+   return JSON.stringify(merged);
+  }
+  if(base===DRAFT_KEY&&legacy&&current&&typeof legacy==="object"&&typeof current==="object"){
+   const useLegacy=(Number(legacy.savedAt)||0)>(Number(current.savedAt)||0),active=useLegacy?legacy:current,spare=useLegacy?current:legacy;
+   if(spare.project)saveLegacyDraftAsProject(spare);else recoverLegacyValue(base,JSON.stringify(spare));
+   return JSON.stringify(active);
+  }
+  if((base==="payungStudioVaultV3"||base==="payungStudioCalendarV3")&&Array.isArray(legacy)&&Array.isArray(current)){
+   const merged=[],indexes=new Map();
+   const signature=row=>row&&typeof row==="object"&&!Array.isArray(row)&&row.id!=null?`id:${String(row.id)}`:
+    (base==="payungStudioCalendarV3"&&row&&typeof row==="object"?`calendar:${row.date||""}:${row.day||""}:${row.product||""}`:`json:${JSON.stringify(row)}`);
+   for(const row of [...legacy,...current]){const key=signature(row);if(indexes.has(key)){const at=indexes.get(key),previous=merged[at];merged[at]=previous&&row&&typeof previous==="object"&&typeof row==="object"&&!Array.isArray(previous)&&!Array.isArray(row)?{...previous,...row}:row;}else{indexes.set(key,merged.length);merged.push(row);}}
+   return JSON.stringify(merged);
+  }
+  if(base==="payungStudioMetricsV3"&&legacy&&current&&typeof legacy==="object"&&typeof current==="object"&&!Array.isArray(legacy)&&!Array.isArray(current)){
+   const merged=Object.assign(Object.create(null),legacy);
+   for(const [id,value] of Object.entries(current))merged[id]=value&&typeof value==="object"&&!Array.isArray(value)&&merged[id]&&typeof merged[id]==="object"&&!Array.isArray(merged[id])?{...merged[id],...value}:value;
+   return JSON.stringify(merged);
+  }
+  if(legacy&&current&&typeof legacy==="object"&&typeof current==="object"&&!Array.isArray(legacy)&&!Array.isArray(current))return JSON.stringify({...legacy,...current});
+  recoverLegacyValue(base,legacyRaw);return currentRaw;
+ }catch(e){recoverLegacyValue(base,legacyRaw);return currentRaw;}
+}
+function migrateLegacyLocalData(){
+ const legacyKeys=[PROJECTS_KEY,DRAFT_KEY,"payungStudioVaultV3","payungStudioCalendarV3","payungStudioMetricsV3"];
+ try{for(const base of legacyKeys){const legacy=localStorage.getItem(base);if(legacy!==null){const scoped=storageKeyFor(base),current=localStorage.getItem(scoped);localStorage.setItem(scoped,mergeLegacyLocalValue(base,legacy,current));localStorage.removeItem(base);}}}
+ catch(e){/* Leave legacy data in place if migration cannot be completed safely. */}
+}
 const templatePresets={
  food:{category:"Makanan dan minuman",style:"Hyper realistic commercial",mood:"Warm, friendly, authentic",lighting:"Golden hour warm sunlight",voice:"Narator wanita, elegan dan ramah",music:"Modern upbeat commercial",description:"Tampilkan produk makanan secara menggugah selera dengan tekstur nyata, detail bahan, dan kemasan yang tetap akurat.",usp:"Tampilan menggugah selera, kualitas dan cita rasa khas"},
  beauty:{category:"Skincare dan kecantikan",style:"Minimalist premium",mood:"Premium, elegant, sophisticated",lighting:"Soft studio lighting with rim light",voice:"Narator wanita, elegan dan ramah",music:"Luxury atmospheric soundscape",description:"Tampilkan tekstur produk, detail kemasan, dan suasana clean beauty. Hindari klaim hasil atau manfaat yang tidak didukung.",usp:"Perawatan praktis dengan tampilan premium"},
@@ -434,7 +491,8 @@ const templatePresets={
  tech:{category:"Elektronik dan gadget",style:"3D product animation",mood:"Energetic, bold, exciting",lighting:"Neon cinematic lighting",voice:"Narator pria, hangat dan meyakinkan",music:"Modern upbeat commercial",description:"Tampilkan bentuk perangkat, material, port, tombol, dan detail desain secara presisi melalui gerakan kamera halus.",usp:"Desain modern dan fitur utama yang mudah dipahami"},
  home:{category:"Rumah tangga",style:"Natural lifestyle",mood:"Warm, friendly, authentic",lighting:"Natural window light",voice:"Narator pria, hangat dan meyakinkan",music:"Minimal ambient and subtle sound effects",description:"Tampilkan produk di lingkungan rumah yang rapi dan realistis, dengan demonstrasi penggunaan yang masuk akal.",usp:"Membantu aktivitas sehari-hari"}
 };
-function getProjectStore(){try{return JSON.parse(localStorage.getItem(PROJECTS_KEY)||"{}")}catch(e){return {}}}
+migrateLegacyLocalData();
+function getProjectStore(){try{return JSON.parse(localStorage.getItem(projectStorageKey())||"{}")}catch(e){return {}}}
 function refreshProjectList(selected=""){
  const store=getProjectStore(),keys=Object.keys(store).sort((a,b)=>store[b].savedAt-store[a].savedAt);
  $("savedProjects").innerHTML=keys.length?'<option value="">Pilih proyek tersimpan…</option>'+keys.map(k=>'<option value="'+escapeHtml(k)+'">'+escapeHtml(k)+'</option>').join(""):'<option value="">Belum ada proyek tersimpan</option>';
@@ -461,21 +519,26 @@ $("applyTemplate").addEventListener("click",()=>{
 });
 $("saveProject").addEventListener("click",()=>{
  const name=$("projectName").value.trim()||$("productName").value.trim();if(!name){toast("Isi nama proyek atau nama produk terlebih dahulu.");$("projectName").focus();return}
- try{const store=getProjectStore();store[name]=captureProject();localStorage.setItem(PROJECTS_KEY,JSON.stringify(store));refreshProjectList(name);persistDraft();toast("Proyek tersimpan di perangkat ini.")}
+ try{const store=getProjectStore();store[name]=captureProject();localStorage.setItem(projectStorageKey(),JSON.stringify(store));refreshProjectList(name);persistDraft();toast("Proyek tersimpan di perangkat ini.")}
  catch(e){toast("Penyimpanan gagal. Periksa ruang browser.")}
 });
 $("loadProject").addEventListener("click",()=>{const name=$("savedProjects").value,project=getProjectStore()[name];if(!project){toast("Pilih proyek yang ingin dimuat.");return}$("projectName").value=name;applyProject(project);persistDraft()});
-$("deleteProject").addEventListener("click",()=>{const name=$("savedProjects").value;if(!name){toast("Pilih proyek yang ingin dihapus.");return}try{const store=getProjectStore();delete store[name];localStorage.setItem(PROJECTS_KEY,JSON.stringify(store));refreshProjectList();toast("Proyek dihapus dari perangkat ini.")}catch(e){toast("Tidak dapat menghapus data. Periksa izin penyimpanan browser.")}});
+$("deleteProject").addEventListener("click",()=>{const name=$("savedProjects").value;if(!name){toast("Pilih proyek yang ingin dihapus.");return}try{const store=getProjectStore();delete store[name];localStorage.setItem(projectStorageKey(),JSON.stringify(store));refreshProjectList();toast("Proyek dihapus dari perangkat ini.")}catch(e){toast("Tidak dapat menghapus data. Periksa izin penyimpanan browser.")}});
 // Automatic local draft plus portable full-project backup.
-const DRAFT_KEY="payungAIStudioDraftV21";
 let draftTimer=null;
 function persistDraft(){
- try{localStorage.setItem(DRAFT_KEY,JSON.stringify({project:captureProject(),projectName:$("projectName").value,savedAt:Date.now()}));}
+ try{localStorage.setItem(draftStorageKey(),JSON.stringify({project:captureProject(),projectName:$("projectName").value,savedAt:Date.now()}));}
  catch(e){/* Keep the generator usable if browser storage is unavailable. */}
 }
 function restoreDraft(){
- try{const raw=localStorage.getItem(DRAFT_KEY);if(!raw)return;const draft=JSON.parse(raw);if(draft&&draft.project){applyProject(draft.project);$("projectName").value=draft.projectName||"";}}
- catch(e){localStorage.removeItem(DRAFT_KEY);}
+ try{const raw=localStorage.getItem(draftStorageKey());if(!raw)return;const draft=JSON.parse(raw);if(draft&&draft.project){applyProject(draft.project);$("projectName").value=draft.projectName||"";}}
+ catch(e){localStorage.removeItem(draftStorageKey());}
+}
+function clearGeneratorDraft(){
+ clearTimeout(draftTimer);document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(el=>el.value="");
+ $("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;
+ $("reference").value="";$("preview").removeAttribute("src");$("preview").style.display="none";$("projectName").value="";$("results").style.display="none";$("aiStoryboardOutput").textContent="Storyboard versi Gemini akan muncul di sini.";lastOutput="";
+ selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();
 }
 function scheduleDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(persistDraft,350);}
 function downloadJson(filename,data){
@@ -491,11 +554,12 @@ $("backupFile").addEventListener("change",event=>{
  const reader=new FileReader();reader.onload=()=>{
   try{
    const data=JSON.parse(String(reader.result||""));
-   if(!data||data.app!=="Payung AI Studio"||!data.projects||typeof data.projects!=="object")throw new Error("Format backup tidak dikenali");
+   if(!data||data.app!=="Payung AI Studio"||!data.projects||typeof data.projects!=="object"||Array.isArray(data.projects))throw new Error("Format backup tidak dikenali");
+   const importedRecords=rows=>Array.isArray(rows)?rows.filter(row=>row&&typeof row==="object"&&!Array.isArray(row)).slice(0,5000):[];
    const existing=getProjectStore();const merged={...existing,...data.projects};
-   localStorage.setItem(PROJECTS_KEY,JSON.stringify(merged));
-   if(Array.isArray(data.vault))safeWrite("payungStudioVaultV3",data.vault);
-   if(Array.isArray(data.calendar))safeWrite("payungStudioCalendarV3",data.calendar);
+   localStorage.setItem(projectStorageKey(),JSON.stringify(merged));
+   if(Array.isArray(data.vault))safeWrite("payungStudioVaultV3",importedRecords(data.vault));
+   if(Array.isArray(data.calendar))safeWrite("payungStudioCalendarV3",importedRecords(data.calendar));
    if(data.metrics&&typeof data.metrics==="object")safeWrite("payungStudioMetricsV3",data.metrics);
    if(data.draft&&data.draft.project){applyProject(data.draft.project);$("projectName").value=data.draft.projectName||"";persistDraft();}
    refreshProjectList();if(typeof renderCalendar==="function")renderCalendar();if(typeof updateVault==="function")updateVault();toast("Backup berhasil dipulihkan.");
@@ -504,8 +568,7 @@ $("backupFile").addEventListener("change",event=>{
  };
  reader.onerror=()=>{toast("File backup gagal dibaca.");event.target.value="";};reader.readAsText(file);
 });
-// Restore the last working draft after the page is initialized.
-restoreDraft();
+// Draft restoration waits until Supabase confirms whether this is Guest or a signed-in account.
 document.querySelectorAll("#generator input:not([type=file]),#generator select,#generator textarea").forEach(el=>{
  el.addEventListener("input",scheduleDraftSave);el.addEventListener("change",scheduleDraftSave);
 });
@@ -515,7 +578,7 @@ $("copyAll").addEventListener("click",()=>copyText(lastOutput));
 $("copyMaster").addEventListener("click",()=>copyText($("masterPrompt").textContent));
 $("download").addEventListener("click",()=>{if(!lastOutput)return;const blob=new Blob([lastOutput],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="payung-ai-studio-storyboard.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
 $("print").addEventListener("click",()=>window.print());
-$("reset").addEventListener("click",()=>{document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(x=>x.value="");$("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;$("reference").value="";$("preview").style.display="none";selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();$("results").style.display="none";try{localStorage.removeItem(DRAFT_KEY)}catch(e){}$("projectName").value="";toast("Formulir direset.")});
+$("reset").addEventListener("click",()=>{document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(x=>x.value="");$("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;$("reference").value="";$("preview").style.display="none";selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();$("results").style.display="none";try{localStorage.removeItem(draftStorageKey())}catch(e){}$("projectName").value="";toast("Formulir direset.")});
 $("reference").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith("image/")){toast("Pilih file gambar.");return}const url=URL.createObjectURL(f);$("preview").src=url;$("preview").style.display="block"});
 $("techSearch").addEventListener("input",renderTech);$("techCategory").addEventListener("change",renderTech);
 
@@ -534,8 +597,17 @@ const socialFormats={
  fyp:{name:"FYP Starter Pack",hook:"Simpan dulu kalau kamu sedang mempertimbangkan {product}.",angle:"Gunakan hook singkat, visual produk yang jelas, dan satu pesan utama."}
 };
 let currentSocialText="",currentCalendar=[];
-const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||JSON.stringify(fallback))}catch(e){return fallback}};
-const safeWrite=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));if(typeof payungSupabase!=="undefined"&&payungSupabase&&payungSession)payungSyncWorkspace();return true}catch(e){toast("Penyimpanan browser penuh atau tidak tersedia.");return false}};
+const workspaceDataKeys=new Set([VAULT_KEY,CAL_KEY,METRIC_KEY]);
+const workspaceDirtyKey=userId=>`payungStudioWorkspaceDirty:${userId}`;
+const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(storageKeyFor(key))||JSON.stringify(fallback))}catch(e){return fallback}};
+const safeWrite=(key,value)=>{try{
+ localStorage.setItem(storageKeyFor(key),JSON.stringify(value));
+ if(workspaceDataKeys.has(key)){
+  payungWorkspaceEditVersion++;payungWorkspaceEditUserId=payungSession?.user?.id||"guest";
+  if(payungSession?.user?.id)localStorage.setItem(workspaceDirtyKey(payungSession.user.id),"1");
+ }
+ if(typeof payungSupabase!=="undefined"&&payungSupabase&&payungSession)payungSyncWorkspace();return true;
+ }catch(e){toast("Penyimpanan browser penuh atau tidak tersedia.");return false}};
 function socialTemplateCards(){const root=$("socialTemplates");if(!root)return;root.innerHTML=Object.entries(socialFormats).map(([key,v])=>`<div class="template-card"><b>${escapeHtml(v.name)}</b><span>${escapeHtml(v.angle)}</span><button type="button" data-social-template="${key}">Pakai template →</button></div>`).join("");root.querySelectorAll("[data-social-template]").forEach(b=>b.addEventListener("click",()=>{$("socialFormat").value=b.dataset.socialTemplate;$("socialTone").focus();toast("Template dipilih. Lengkapi brief produk.")}));}
 function createSocialContent(){
  const product=$("socialProduct").value.trim();if(!product){$("socialProduct").focus();toast("Masukkan nama produk terlebih dahulu.");return ""}
@@ -591,8 +663,8 @@ function getVault(){return safeRead(VAULT_KEY,[])}
 function updateVault(){
  const vault=getVault(),q=($("vaultSearch")?.value||"").toLowerCase(),filtered=vault.filter(x=>(x.product+" "+x.format).toLowerCase().includes(q));
  $("vaultCount").textContent=vault.length;$("scheduledCount").textContent=currentCalendar.filter(x=>x.status!=="Belum dijadwalkan").length;
- $("vaultList").innerHTML=filtered.length?filtered.slice().reverse().map(item=>`<div class="vault-item"><strong>${escapeHtml(item.product)} — ${escapeHtml(item.format)}</strong><small>${new Date(item.createdAt).toLocaleString("id-ID")} · ${escapeHtml(item.caption||"").slice(0,100)}</small><div class="vault-actions"><button class="copy-small" data-vault-copy="${item.id}">Salin</button><button class="copy-small" data-vault-share="${item.id}">Bagikan</button><button class="copy-small" data-vault-delete="${item.id}">Hapus</button></div></div>`).join(""):'<div class="empty">Belum ada konten yang cocok.</div>';
- const sel=$("metricContent"),old=sel.value;sel.innerHTML=vault.length?'<option value="">Pilih konten…</option>'+vault.map(x=>`<option value="${x.id}">${escapeHtml(x.product)} — ${escapeHtml(x.format)}</option>`).join(""):'<option value="">Belum ada konten</option>';if(vault.some(x=>x.id===old))sel.value=old;
+ $("vaultList").innerHTML=filtered.length?filtered.slice().reverse().map(item=>`<div class="vault-item"><strong>${escapeHtml(item.product)} — ${escapeHtml(item.format)}</strong><small>${new Date(item.createdAt).toLocaleString("id-ID")} · ${escapeHtml(item.caption||"").slice(0,100)}</small><div class="vault-actions"><button class="copy-small" data-vault-copy="${escapeHtml(item.id)}">Salin</button><button class="copy-small" data-vault-share="${escapeHtml(item.id)}">Bagikan</button><button class="copy-small" data-vault-delete="${escapeHtml(item.id)}">Hapus</button></div></div>`).join(""):'<div class="empty">Belum ada konten yang cocok.</div>';
+ const sel=$("metricContent"),old=sel.value;sel.innerHTML=vault.length?'<option value="">Pilih konten…</option>'+vault.map(x=>`<option value="${escapeHtml(x.id)}">${escapeHtml(x.product)} — ${escapeHtml(x.format)}</option>`).join(""):'<option value="">Belum ada konten</option>';if(vault.some(x=>x.id===old))sel.value=old;
  const metrics=safeRead(METRIC_KEY,{});let views=0,orders=0;Object.values(metrics).forEach(m=>{views+=Number(m.views)||0;orders+=Number(m.orders)||0});$("conversionCount").textContent=orders.toLocaleString("id-ID");$("metricSummary").textContent=`Total views tercatat: ${views.toLocaleString("id-ID")} · Pesanan: ${orders.toLocaleString("id-ID")}`;
  $("vaultList").querySelectorAll("[data-vault-copy]").forEach(b=>b.onclick=()=>{const x=getVault().find(v=>v.id===b.dataset.vaultCopy);if(x)copyText(x.text)});
  $("vaultList").querySelectorAll("[data-vault-share]").forEach(b=>b.onclick=async()=>{const x=getVault().find(v=>v.id===b.dataset.vaultShare);if(x)await shareText(x.text,x.product)});
@@ -608,7 +680,7 @@ function buildCalendar(){
 }
 function renderCalendar(){
  currentCalendar=safeRead(CAL_KEY,[]);$("calendarSummary").textContent=currentCalendar.length?`${currentCalendar.length} ide konten untuk ${currentCalendar[0].product}. Status dapat diperbarui per hari.`:"Belum ada kalender yang dibuat.";
- $("calendarList").innerHTML=currentCalendar.length?currentCalendar.map(x=>`<div class="calendar-day"><div class="dayno">${String(x.day).padStart(2,"0")}</div><div><b>${escapeHtml(x.angle)}</b><small>${new Date(x.date+"T12:00:00").toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})} · ${escapeHtml(x.product)}</small></div><select data-calendar-status="${x.day}"><option ${x.status==="Belum dijadwalkan"?"selected":""}>Belum dijadwalkan</option><option ${x.status==="Draft"?"selected":""}>Draft</option><option ${x.status==="Siap posting"?"selected":""}>Siap posting</option><option ${x.status==="Sudah posting"?"selected":""}>Sudah posting</option></select></div>`).join(""):'<div class="empty">Generate kalender untuk melihat 30 ide posting.</div>';
+ $("calendarList").innerHTML=currentCalendar.length?currentCalendar.map(x=>`<div class="calendar-day"><div class="dayno">${escapeHtml(String(x.day).padStart(2,"0"))}</div><div><b>${escapeHtml(x.angle)}</b><small>${new Date(x.date+"T12:00:00").toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})} · ${escapeHtml(x.product)}</small></div><select data-calendar-status="${escapeHtml(x.day)}"><option ${x.status==="Belum dijadwalkan"?"selected":""}>Belum dijadwalkan</option><option ${x.status==="Draft"?"selected":""}>Draft</option><option ${x.status==="Siap posting"?"selected":""}>Siap posting</option><option ${x.status==="Sudah posting"?"selected":""}>Sudah posting</option></select></div>`).join(""):'<div class="empty">Generate kalender untuk melihat 30 ide posting.</div>';
  $("calendarList").querySelectorAll("[data-calendar-status]").forEach(sel=>sel.onchange=()=>{const day=Number(sel.dataset.calendarStatus),row=currentCalendar.find(x=>x.day===day);if(row){row.status=sel.value;safeWrite(CAL_KEY,currentCalendar);updateVault()}});updateVault();
 }
 $("makeSocial").addEventListener("click",createSocialContent);
@@ -626,7 +698,7 @@ $("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value
 $("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=safeRead(METRIC_KEY,{})[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
 const payungLocalDate=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
 $("calendarStart").value=payungLocalDate();
-currentCalendar=safeRead(CAL_KEY,[]);socialTemplateCards();renderCalendar();updateVault();
+currentCalendar=[];socialTemplateCards();
 
 
 /* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + Gemini */
@@ -634,50 +706,141 @@ const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
 const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
 const PAYUNG_GENERATE_URL="https://payung-ai-studio.misbaahmed17.workers.dev/generate";
 const PAYUNG_AUTH_REDIRECT_URL="https://misba234.github.io/payung-ai-studio/";
-let payungSupabase=null, payungSession=null, payungSyncTimer=null, payungWorkspaceLoading=false;
+let payungSupabase=null,payungSyncTimer=null;
+let payungWorkspaceLoadGeneration=0,payungAuthRefreshGeneration=0,payungWorkspaceReadyUserId=null,payungWorkspaceUiInitialized=false;
 function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
+function clearPayungWorkspaceLocal(){
+ currentCalendar=safeRead(CAL_KEY,[]);currentSocialText="";renderCalendar();updateVault();
+ ["socialProduct","socialLink","socialAudience","socialBenefit","calendarProduct","metricViews","metricClicks","metricOrders","metricRevenue"].forEach(id=>{if($(id))$(id).value="";});
+ $("socialOutput").textContent="Hasil generator akan muncul di sini setelah Anda membuat konten.";$("calendarAIOutput").textContent="Strategi kalender AI akan muncul di sini.";
+}
+function payungSetWorkspaceLocked(locked){
+ ["#generator","#results","#content-engine","#calendar","#vault"].forEach(selector=>{const el=document.querySelector(selector);if(el)el.inert=locked;});
+}
+function payungHideAccountWorkspaceUI(){
+ payungSetWorkspaceLocked(true);currentCalendar=[];currentSocialText="";
+ $("calendarSummary").textContent="Data kalender disembunyikan sampai sesi akun terverifikasi.";$("calendarList").innerHTML='<div class="empty">Sesi belum terverifikasi.</div>';
+ $("vaultCount").textContent="—";$("scheduledCount").textContent="—";$("vaultList").innerHTML='<div class="empty">Data Vault disembunyikan sampai sesi akun terverifikasi.</div>';
+ $("metricContent").innerHTML='<option value="">Sesi belum terverifikasi</option>';
+ $("metricSummary").textContent="Metrik disembunyikan sampai sesi terverifikasi.";$("conversionCount").textContent="—";
+ $("savedProjects").innerHTML='<option value="">Sesi belum terverifikasi</option>';
+ ["socialProduct","socialLink","socialAudience","socialBenefit","calendarProduct","metricViews","metricClicks","metricOrders","metricRevenue","vaultSearch","authEmail","authPassword"].forEach(id=>{if($(id))$(id).value="";});
+ $("socialOutput").textContent="Hasil generator akan muncul di sini setelah sesi diverifikasi.";$("calendarAIOutput").textContent="Strategi kalender AI akan muncul di sini.";
+ clearGeneratorDraft();$("authSignOut").hidden=false;$("authUserLabel").textContent="Sesi belum diverifikasi";$("authCreditLabel").textContent="—";$("authAiLabel").textContent="Perlu verifikasi";
+}
+function payungApplySession(session,force=false){
+ const previousUserId=payungSession?.user?.id||null,newUserId=session?.user?.id||null;
+ if(previousUserId===newUserId&&!force){payungSession=session;payungSessionVerified=true;payungSessionLocked=false;return false;}
+ if(payungDraftRestored)persistDraft();clearTimeout(payungSyncTimer);payungWorkspaceLoadGeneration++;payungWorkspaceReadyUserId=null;
+ payungSession=session;payungSessionVerified=true;payungSessionLocked=false;payungWorkspaceEditVersion=0;payungWorkspaceEditUserId=newUserId||"guest";payungSetWorkspaceLocked(false);
+ clearPayungWorkspaceLocal();payungWorkspaceUiInitialized=true;clearGeneratorDraft();refreshProjectList();restoreDraft();payungDraftRestored=true;
+ $("authEmail").value="";$("authPassword").value="";
+ return true;
+}
+function payungHasStoredAuthSession(){try{return Object.keys(localStorage).some(key=>key.startsWith("sb-")&&key.endsWith("-auth-token"));}catch(e){return true;}}
+function payungLockCurrentAccount(){
+ if(!payungSession?.user?.id||payungSessionLocked)return;
+ if(payungDraftRestored)persistDraft();payungDraftRestored=false;payungSessionVerified=false;payungSessionLocked=true;
+ clearTimeout(payungSyncTimer);payungWorkspaceLoadGeneration++;payungWorkspaceReadyUserId=null;payungHideAccountWorkspaceUI();
+}
+function payungRequestSessionRefresh(){
+ payungAuthRefreshGeneration++;if(payungSession?.user?.id)payungLockCurrentAccount();
+ setTimeout(()=>payungRefreshAccount(),0);
+}
+function payungInitializeGuestLocalUI(){
+ if(payungSession?.user?.id||payungHasStoredAuthSession())return false;
+ if(payungWorkspaceUiInitialized)return true;
+ payungSession=null;payungSessionVerified=false;payungSessionLocked=false;payungWorkspaceEditVersion=0;payungWorkspaceEditUserId="guest";payungSetWorkspaceLocked(false);
+ clearPayungWorkspaceLocal();payungWorkspaceUiInitialized=true;
+ if(!payungDraftRestored){refreshProjectList();restoreDraft();payungDraftRestored=true;}
+ return true;
+}
 async function payungRefreshAccount(){
  if(!payungSupabase)return;
- const {data:{session}}=await payungSupabase.auth.getSession();payungSession=session;
- if(session){await payungLoadWorkspace();}
+ const refreshGeneration=++payungAuthRefreshGeneration;
+ let session=null;
+ try{const result=await payungSupabase.auth.getSession();session=result?.data?.session||null;}
+ catch(error){
+  if(refreshGeneration===payungAuthRefreshGeneration){
+   if(payungSession?.user?.id)payungLockCurrentAccount();
+   else if(!payungInitializeGuestLocalUI()){$("authUserLabel").textContent="Sesi belum diverifikasi";$("authAiLabel").textContent="Perlu verifikasi";}
+   payungStatus("Sesi belum dapat diverifikasi. Data akun disembunyikan sampai koneksi pulih.");
+  }
+  return;
+ }
+ if(refreshGeneration!==payungAuthRefreshGeneration)return;
+ const previousUserId=payungSession?.user?.id||null,newUserId=session?.user?.id||null;
+ if(previousUserId!==newUserId||payungSessionLocked)payungApplySession(session,true);else{payungSession=session;payungSessionVerified=true;payungSessionLocked=false;}
+ if(!payungDraftRestored){refreshProjectList();restoreDraft();payungDraftRestored=true;}
+ if(!payungWorkspaceUiInitialized){clearPayungWorkspaceLocal();payungWorkspaceUiInitialized=true;}
+ if(session&&payungWorkspaceReadyUserId!==newUserId)await payungLoadWorkspace(newUserId);
+ if(refreshGeneration!==payungAuthRefreshGeneration||(payungSession?.user?.id||null)!==newUserId)return;
  const logged=!!session;
- $("authSignOut").hidden=!logged;
- $("authUserLabel").textContent=logged?(session.user.email||"Pengguna"):"Guest";
- $("authAiLabel").textContent=logged?"Terhubung":"Offline";
- $("authCreditLabel").textContent="—";
+ $("authSignOut").hidden=!logged;$("authUserLabel").textContent=logged?(session.user.email||"Pengguna"):"Guest";$("authAiLabel").textContent=logged?"Terhubung":"Offline";$("authCreditLabel").textContent="—";
  if(logged){
-  const {data,error}=await payungSupabase.from("ai_credits").select("balance").eq("user_id",session.user.id).maybeSingle();
-  if(!error && data) $("authCreditLabel").textContent=String(data.balance);
-  else $("authCreditLabel").textContent="Belum tersedia";
-  payungStatus("Login sebagai "+session.user.email+". Kredit AI ditampilkan dari database Supabase.");
- } else payungStatus("Belum login. Generator draft lokal tetap tersedia.");
+  try{const {data,error}=await payungSupabase.from("ai_credits").select("balance").eq("user_id",session.user.id).maybeSingle();
+   if(refreshGeneration!==payungAuthRefreshGeneration||(payungSession?.user?.id||null)!==newUserId)return;
+   if(!error&&data)$("authCreditLabel").textContent=String(data.balance);else $("authCreditLabel").textContent="Belum tersedia";
+   payungStatus("Login sebagai "+session.user.email+". Kredit AI ditampilkan dari database Supabase.");
+  }catch(e){if(refreshGeneration===payungAuthRefreshGeneration)payungStatus("Login aktif, tetapi saldo kredit belum dapat dimuat.");}
+ }else payungStatus("Belum login. Generator draft lokal tetap tersedia.");
 }
-async function payungLoadWorkspace(){
- if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
- payungWorkspaceLoading=true;
+async function payungLoadWorkspace(expectedUserId){
+ if(!payungSupabase||!payungSessionVerified||payungSessionLocked||!expectedUserId||payungSession?.user?.id!==expectedUserId)return;
+ const loadGeneration=++payungWorkspaceLoadGeneration;payungWorkspaceReadyUserId=null;
+ const editVersionAtStart=payungWorkspaceEditVersion;
+ const isCurrent=()=>loadGeneration===payungWorkspaceLoadGeneration&&payungSession?.user?.id===expectedUserId;
+ const localWasEdited=()=>payungWorkspaceEditUserId===expectedUserId&&payungWorkspaceEditVersion!==editVersionAtStart;
+ const preferLocalWorkspace=()=>{
+  if(!isCurrent())return;
+  currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();payungWorkspaceReadyUserId=expectedUserId;payungSyncWorkspace();
+ };
  try{
-  const {data,error}=await payungSupabase.from("user_workspace").select("vault,calendar,metrics").eq("user_id",payungSession.user.id).maybeSingle();
-  if(error)throw error;
-  if(data){localStorage.setItem(VAULT_KEY,JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(CAL_KEY,JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(METRIC_KEY,JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();}
-  else {const initial={user_id:payungSession.user.id,vault:[],calendar:[],metrics:{},updated_at:new Date().toISOString()};const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});if(saveError)throw saveError;localStorage.setItem(VAULT_KEY,"[]");localStorage.setItem(CAL_KEY,"[]");localStorage.setItem(METRIC_KEY,"{}");currentCalendar=[];renderCalendar();updateVault();}
- }catch(e){payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil: "+e.message)}
- finally{payungWorkspaceLoading=false}
+  const {data,error}=await payungSupabase.from("user_workspace").select("vault,calendar,metrics").eq("user_id",expectedUserId).maybeSingle();
+  if(!isCurrent())return;if(error)throw error;
+  if(localWasEdited()||localStorage.getItem(workspaceDirtyKey(expectedUserId))==="1"){preferLocalWorkspace();return;}
+  if(data){
+   localStorage.setItem(storageKeyFor(VAULT_KEY),JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(storageKeyFor(CAL_KEY),JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(storageKeyFor(METRIC_KEY),JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));
+  }else{
+   const initial={user_id:expectedUserId,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
+   const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});
+   if(!isCurrent())return;if(saveError)throw saveError;
+   if(localWasEdited()||localStorage.getItem(workspaceDirtyKey(expectedUserId))==="1"){preferLocalWorkspace();return;}
+  }
+  if(!isCurrent())return;currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();payungWorkspaceReadyUserId=expectedUserId;
+ }catch(e){if(isCurrent())payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil. Salinan lokal per akun tetap tersedia.");}
+}
+function payungWorkspacePayload(userId){return {user_id:userId,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};}
+async function payungFlushWorkspace(){
+ const userId=payungSession?.user?.id;if(!userId)return true;if(!payungSessionVerified||payungSessionLocked||payungWorkspaceReadyUserId!==userId)return false;
+ clearTimeout(payungSyncTimer);const editVersion=payungWorkspaceEditVersion;
+ try{
+  const {error}=await payungSupabase.from("user_workspace").upsert(payungWorkspacePayload(userId),{onConflict:"user_id"});
+  if(error||payungSession?.user?.id!==userId||payungWorkspaceEditVersion!==editVersion)return false;
+  localStorage.removeItem(workspaceDirtyKey(userId));return true;
+ }catch(e){return false;}
 }
 async function payungSyncWorkspace(){
- if(!payungSupabase||!payungSession||payungWorkspaceLoading)return;
- clearTimeout(payungSyncTimer);
- const syncUserId=payungSession.user.id;
+ if(!payungSupabase||!payungSession||!payungSessionVerified||payungSessionLocked||payungWorkspaceReadyUserId!==payungSession.user.id)return;
+ clearTimeout(payungSyncTimer);const syncUserId=payungSession.user.id;
  payungSyncTimer=setTimeout(async()=>{
-  if(!payungSession||payungSession.user.id!==syncUserId)return;
-  const payload={user_id:syncUserId,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
-  const {error}=await payungSupabase.from("user_workspace").upsert(payload,{onConflict:"user_id"});
-  if(error&&payungSession?.user?.id===syncUserId)payungStatus("Data tersimpan di perangkat, tetapi sinkronisasi cloud gagal: "+error.message);
+  if(!payungSession||payungSession.user.id!==syncUserId||payungWorkspaceReadyUserId!==syncUserId)return;
+  const editVersion=payungWorkspaceEditVersion;
+  try{
+   const {error}=await payungSupabase.from("user_workspace").upsert(payungWorkspacePayload(syncUserId),{onConflict:"user_id"});
+   if(error)throw error;
+   if(payungSession?.user?.id===syncUserId&&payungWorkspaceEditVersion===editVersion)localStorage.removeItem(workspaceDirtyKey(syncUserId));
+  }catch(e){if(payungSession?.user?.id===syncUserId)payungStatus("Data tersimpan di perangkat, tetapi sinkronisasi cloud gagal.");}
  },700);
 }
 async function payungAuthInit(){
- if(!window.supabase?.createClient){payungStatus("Library autentikasi belum termuat. Muat ulang halaman.");return}
+ if(!window.supabase?.createClient){if(!payungInitializeGuestLocalUI()){$("authUserLabel").textContent="Sesi belum diverifikasi";$("authAiLabel").textContent="Perlu verifikasi";}payungStatus("Library autentikasi belum termuat. Muat ulang halaman.");return}
  payungSupabase=window.supabase.createClient(PAYUNG_SUPABASE_URL,PAYUNG_SUPABASE_KEY);
- payungSupabase.auth.onAuthStateChange(()=>setTimeout(payungRefreshAccount,0));
+ payungSupabase.auth.onAuthStateChange((_event,session)=>{
+  const currentUserId=payungSession?.user?.id||null,nextUserId=session?.user?.id||null;
+  if(currentUserId&&currentUserId!==nextUserId){payungAuthRefreshGeneration++;payungLockCurrentAccount();}
+  setTimeout(()=>payungRefreshAccount(),0);
+ });
  await payungRefreshAccount();
 }
 $("authSignIn").addEventListener("click",async()=>{
@@ -698,15 +861,24 @@ $("authSignUp").addEventListener("click",async()=>{
  else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
  else payungStatus("Pendaftaran diterima. Buka email verifikasi terbaru dari Payung AI Studio. Setelah menekan tombol konfirmasi, Anda akan diarahkan kembali ke website ini. Jika tautan lama mengarah ke alamat yang salah, minta email verifikasi baru.");
 });
-$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;clearTimeout(payungSyncTimer);const {error}=await payungSupabase.auth.signOut();if(error){payungStatus("Gagal keluar: "+error.message);return}localStorage.removeItem(VAULT_KEY);localStorage.removeItem(CAL_KEY);localStorage.removeItem(METRIC_KEY);currentCalendar=[];renderCalendar();updateVault();await payungRefreshAccount()});
+$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;const synced=await payungFlushWorkspace();if(!synced)payungStatus("Workspace belum tersinkron; salinan lokal akun tetap tersimpan di perangkat ini.");const {error}=await payungSupabase.auth.signOut();if(error){payungStatus("Gagal keluar: "+error.message);return}await payungRefreshAccount()});
 async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
+ if(!payungSessionVerified||payungSessionLocked){toast("Sesi belum terverifikasi. Coba lagi setelah koneksi pulih.");return null}
  if(!payungSupabase){toast("Autentikasi belum siap.");return null}
- const {data:{session}}=await payungSupabase.auth.getSession();
- if(!session){toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null}
+ let session=null;
+ try{const result=await payungSupabase.auth.getSession();session=result?.data?.session||null;}
+ catch(error){payungRequestSessionRefresh();toast("Sesi belum dapat diverifikasi. Coba lagi setelah koneksi pulih.");return null;}
+ const currentUserId=payungSession?.user?.id||null,sessionUserId=session?.user?.id||null;
+ if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null;}
+ if(!payungSessionVerified||payungSessionLocked||!currentUserId||sessionUserId!==currentUserId){payungRequestSessionRefresh();toast("Sesi akun berubah. Periksa status login lalu coba lagi.");return null;}
  const button=$(buttonId);const originalLabel=button?.textContent||"";if(button){button.disabled=true;button.textContent="Gemini sedang memproses...";}
  try{
   const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
-  const data=await response.json();
+  const data=await response.json();let activeSession=null;
+  try{const result=await payungSupabase.auth.getSession();activeSession=result?.data?.session||null;}
+  catch(error){payungRequestSessionRefresh();return null;}
+  const activeUserId=activeSession?.user?.id||null,displayedUserId=payungSession?.user?.id||null;
+  if(!payungSessionVerified||payungSessionLocked||activeUserId!==sessionUserId||displayedUserId!==sessionUserId){payungRequestSessionRefresh();return null;}
   if(!response.ok)throw new Error(data.error||"Permintaan AI gagal");
   $("authCreditLabel").textContent=String(data.credits_remaining??"—");
   $("authAiLabel").textContent="Aktif";
@@ -716,9 +888,26 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
 }
 $("generateAIStoryboard").addEventListener("click",async()=>{
  const product=$("productName").value.trim();if(!product){toast("Isi nama produk pada brief cinematic terlebih dahulu.");return}
- const fields=["productName","category","duration","ratio","target","style","camera","lighting","voice","music","extra"];
- const brief=fields.map(id=>{const el=$(id);return el?`${id}: ${el.value}`:""}).filter(Boolean).join("\\n");
- const prompt=`Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:\\n${brief}\\nBerikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
+ const brief=[
+  `Produk: ${$("productName").value.trim()}`,
+  `Kategori: ${$("category").value}`,
+  `Deskripsi: ${$("description").value.trim()||"Tidak diberikan"}`,
+  `Keunggulan/fakta: ${$("usp").value.trim()||"Tidak diberikan; jangan mengarang"}`,
+  `Durasi: ${$("duration").value} detik`,
+  `Platform/rasio: ${$("platform").value}`,
+  `Bahasa: ${$("language").value}`,
+  `Gaya visual: ${$("style").value}`,
+  `Mood: ${$("mood").value}`,
+  `Kamera: ${selectedCameras.join(", ")||"Tidak ditentukan"}`,
+  `Pencahayaan: ${$("lighting").value}`,
+  `Voice-over: ${$("voice").value}`,
+  `Musik: ${$("music").value}`,
+  `Arahan tambahan: ${$("extra").value.trim()||"Tidak ada"}`,
+  `CTA: ${$("cta").value.trim()||"Pesan sekarang"}`
+ ].join("\n");
+ const prompt=`Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:
+${brief}
+Berikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
  const output=await payungGenerateAI("storyboard",prompt,"generateAIStoryboard");
  if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard Gemini berhasil dibuat.")}
 });
