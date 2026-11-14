@@ -1,6 +1,6 @@
 -- Durable idempotency for AI credit reservations.
 -- Apply this migration before deploying the Worker version that calls
--- consume_ai_credit_idempotent. This file is prepared locally and is not applied.
+-- consume_ai_credit_idempotent. This migration was applied in release 80f4882.
 -- This migration is versioned for reproducible schema rollout; deployment does not run it automatically.
 
 ALTER TABLE public.ai_usage_logs

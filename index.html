@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#10131d">
-<meta name="description" content="Payung AI Studio — workspace pembuatan konten, storyboard cinematic, kalender, dan penyimpanan cloud dengan Gemini AI.">
+<meta name="description" content="Payung AI Studio — workspace pembuatan konten, storyboard cinematic, kalender, dan penyimpanan cloud dengan AI Cloud.">
 <title>Payung AI Studio 3.1 — AI Content & Cinematic Production</title>
 <style>
 :root{
@@ -185,20 +185,31 @@ button,.btn{max-width:100%;white-space:normal}
 
 
  <section class="module" id="account">
-  <div class="module-head"><div class="eyebrow">ACCOUNT / CLOUD AI</div><h2>Masuk ke Payung AI Studio</h2><p>Login untuk memakai Gemini AI dan menyimpan pemakaian kredit pada akun Anda.</p></div>
+  <div class="module-head"><div class="eyebrow">ACCOUNT / CLOUD AI</div><h2>Masuk ke Payung AI Studio</h2><p>Login untuk memakai AI Cloud dan menyimpan pemakaian kredit pada akun Anda.</p></div>
   <div class="module-card">
    <div class="grid2">
     <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="nama@email.com"></div>
     <div class="field"><label for="authPassword">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Minimal 8 karakter"></div>
    </div>
    <div class="module-actions"><button class="btn primary" id="authSignIn">Masuk</button><button class="btn secondary" id="authSignUp">Daftar akun</button><button class="btn ghost" id="authSignOut" hidden>Keluar</button></div>
-   <p id="authStatus" class="notice" style="margin-top:12px">Status: belum login. Generator lokal tetap bisa digunakan tanpa akun.</p><p class="note">Fitur lokal tetap di perangkat ini. Saat memakai Gemini, prompt teks dikirim ke backend Payung AI Studio dan Google Gemini; Vault, kalender, dan metrik disinkronkan ke Supabase saat login. Jangan masukkan password atau data rahasia.</p>
+   <p id="authStatus" class="notice" style="margin-top:12px">Status: belum login. Generator lokal tetap bisa digunakan tanpa akun.</p><p class="note">Fitur lokal tetap di perangkat ini. Saat memakai AI Cloud, prompt teks dikirim ke backend Payung AI Studio dan provider AI; Vault, kalender, dan metrik disinkronkan ke Supabase saat login. Jangan masukkan password atau data rahasia.</p>
    <div class="metric-grid" style="margin-top:12px"><div class="metric"><small>Akun</small><strong id="authUserLabel" style="font-size:14px">Guest</strong></div><div class="metric"><small>Kredit AI</small><strong id="authCreditLabel">—</strong></div><div class="metric"><small>AI Cloud</small><strong id="authAiLabel" style="font-size:14px">Offline</strong></div></div>
+  </div>
+  <div id="adminProviderPanel" class="module-card" style="display:none;margin-top:12px" hidden aria-hidden="true">
+   <div class="module-head"><div class="eyebrow">ADMIN / PRIVATE SETTINGS</div><h3>Pengaturan provider AI</h3><p>Pengaturan provider/model ini berlaku untuk generator cloud. Nilai API key tidak ditampilkan atau dimasukkan dari halaman ini.</p></div>
+   <div class="grid2">
+    <div class="field"><label for="adminProviderSelect">Provider aktif</label><select id="adminProviderSelect"></select></div>
+    <div class="field"><label for="adminModelId">Model ID</label><input id="adminModelId" type="text" maxlength="128" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Masukkan model ID provider"></div>
+   </div>
+   <p id="adminProviderKeyStatus" class="notice" style="margin-top:10px">Status API key tidak tersedia.</p>
+   <p class="note">API key hanya disimpan sebagai Worker secret di server. Tidak ada rotasi atau fallback otomatis saat kuota provider habis/gagal.</p>
+   <div class="module-actions"><button class="btn secondary" id="adminProviderReload" type="button">Muat ulang</button><button class="btn primary" id="adminProviderSave" type="button">Simpan provider/model</button></div>
+   <p id="adminProviderStatus" class="note" role="status" aria-live="polite"></p>
   </div>
  </section>
 
  <section id="generator">
-  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2>Bangun iklan cinematic Anda</h2><p>Buat draft lokal tanpa kredit atau gunakan Gemini AI setelah login. Hasil dapat disimpan dan disinkronkan ke akun Anda.</p></div><span class="pill">LOKAL + GEMINI AI</span></div>
+  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2>Bangun iklan cinematic Anda</h2><p>Buat draft lokal tanpa kredit atau gunakan AI Cloud setelah login. Hasil dapat disimpan dan disinkronkan ke akun Anda.</p></div><span class="pill">LOKAL + AI CLOUD</span></div>
   <div class="workspace">
    <div class="panel form-panel">
     <div class="form-section">
@@ -240,8 +251,8 @@ button,.btn{max-width:100%;white-space:normal}
      <div class="field"><label for="extra">Instruksi kreatif tambahan (opsional)</label><textarea id="extra" placeholder="Contoh: tampilkan bahan alami, jangan tampilkan manusia, pertahankan warna kemasan..."></textarea></div>
     </div>
     <button class="btn primary" id="generate" style="width:100%;padding:15px">✦ Generate storyboard & prompt (Lokal)</button>
-    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">✦ Generate storyboard dengan Gemini AI</button>
-    <div id="aiStoryboardOutput" class="content-output" style="margin-top:12px">Storyboard versi Gemini akan muncul di sini.</div>
+    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">✦ Generate storyboard dengan AI Cloud</button>
+    <div id="aiStoryboardOutput" class="content-output" style="margin-top:12px">Storyboard versi AI Cloud akan muncul di sini.</div>
    </div>
    <aside class="panel sidebar">
     <h3>Creative brief</h3><p>Ringkasan pengaturan proyek Anda.</p>
@@ -264,7 +275,7 @@ button,.btn{max-width:100%;white-space:normal}
      <div class="grid2"><button class="btn secondary" id="loadProject" style="margin:0">Muat</button><button class="btn ghost" id="deleteProject" style="margin:0">Hapus</button></div>
      <div class="grid2" style="margin-top:10px"><button class="btn secondary" id="exportBackup" style="margin:0">↓ Backup JSON</button><button class="btn secondary" id="importBackup" style="margin:0">↑ Pulihkan JSON</button></div>
      <input id="backupFile" type="file" accept="application/json,.json" style="display:none">
-     <div class="note">Draft otomatis disimpan di browser. Backup JSON dapat dipindahkan ke perangkat lain. Foto referensi hanya dipratinjau lokal dan tidak ikut tersimpan. Data tidak dikirim ke server.</div>
+     <div class="note">Draft otomatis dan foto referensi disimpan/dipratinjau di browser; foto tidak dikirim. Saat login, Vault, kalender, dan metrik dapat disinkronkan ke Supabase. AI Cloud mengirim prompt teks ke backend/provider. Jangan masukkan data rahasia.</div>
     </div>
    </aside>
   </div>
@@ -280,7 +291,7 @@ button,.btn{max-width:100%;white-space:normal}
 
 
  <section class="module" id="content-engine">
-  <div class="module-head"><div class="eyebrow">02 / AI CONTENT ENGINE</div><h2>Satu produk, banyak ide konten.</h2><p>Buat draft cepat secara lokal atau gunakan Gemini AI untuk menghasilkan variasi hook, script, caption, CTA, dan arahan visual yang lebih mendalam.</p></div>
+  <div class="module-head"><div class="eyebrow">02 / AI CONTENT ENGINE</div><h2>Satu produk, banyak ide konten.</h2><p>Buat draft cepat secara lokal atau gunakan AI Cloud untuk menghasilkan variasi hook, script, caption, CTA, dan arahan visual yang lebih mendalam.</p></div>
   <div class="module-grid">
    <div class="module-card">
     <h3>Product brief</h3>
@@ -290,7 +301,7 @@ button,.btn{max-width:100%;white-space:normal}
     <div class="field"><label for="socialBenefit">Keunggulan / fakta produk</label><textarea id="socialBenefit" placeholder="Masukkan fakta yang benar dari produk. Hindari klaim yang belum terbukti."></textarea></div>
     <div class="field"><label for="socialTone">Gaya komunikasi</label><select id="socialTone"><option>Santai dan relatable</option><option>Review jujur dan informatif</option><option>Persuasif dan energik</option><option>Premium dan elegan</option><option>Humoris dan ringan</option></select></div>
     <div class="field"><label for="socialFormat">Format konten</label><select id="socialFormat"><option value="racun">Racun produk / curiosity hook</option><option value="keranjang">Cek keranjang kuning</option><option value="review">Spill jujur / review</option><option value="pov">POV relatable</option><option value="before">Before / after (gunakan hanya jika faktual)</option><option value="battle">Battle produk</option><option value="unboxing">Unboxing cepat</option><option value="reasons">3 alasan wajib punya</option><option value="budget">Budget challenge</option><option value="fyp">FYP starter pack</option></select></div>
-    <button class="btn secondary" id="makeSocial" style="width:100%">Buat draft lokal (tanpa AI)</button><button class="btn primary" id="makeSocialAI" style="width:100%;margin-top:9px">✦ Generate dengan Gemini AI</button>
+    <button class="btn secondary" id="makeSocial" style="width:100%">Buat draft lokal (tanpa AI)</button><button class="btn primary" id="makeSocialAI" style="width:100%;margin-top:9px">✦ Generate dengan AI Cloud</button>
     <div class="notice" style="margin-top:12px">Tempel link produk tidak otomatis mengambil data dari marketplace. Untuk menghindari data palsu, isi nama, target, dan fakta produk secara manual. Integrasi marketplace/API dapat ditambahkan pada tahap backend.</div>
    </div>
    <div class="module-card">
@@ -304,11 +315,11 @@ button,.btn{max-width:100%;white-space:normal}
  </section>
 
  <section class="module" id="calendar">
-  <div class="module-head"><div class="eyebrow">03 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Susun 30 ide posting secara lokal atau minta Gemini AI membuat strategi yang lebih terperinci. Status posting dapat diubah kapan saja.</p></div>
+  <div class="module-head"><div class="eyebrow">03 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Susun 30 ide posting secara lokal atau minta AI Cloud membuat strategi yang lebih terperinci. Status posting dapat diubah kapan saja.</p></div>
   <div class="module-card">
    <div class="grid2"><div class="field"><label for="calendarProduct">Produk untuk kalender</label><input id="calendarProduct" placeholder="Nama produk"></div><div class="field"><label for="calendarStart">Tanggal mulai</label><input id="calendarStart" type="date"></div></div>
    <button class="btn primary" id="makeCalendar" style="width:100%">Generate kalender 30 hari (Lokal)</button>
-   <button class="btn secondary" id="makeCalendarAI" style="width:100%;margin-top:9px">✦ Buat strategi kalender dengan Gemini AI</button>
+   <button class="btn secondary" id="makeCalendarAI" style="width:100%;margin-top:9px">✦ Buat strategi kalender dengan AI Cloud</button>
    <div id="calendarAIOutput" class="content-output" style="margin-top:12px">Strategi kalender AI akan muncul di sini.</div>
    <div class="module-actions"><button class="btn secondary" id="exportCalendar">Unduh kalender TXT</button><button class="btn ghost" id="resetCalendar">Atur ulang kalender</button></div>
    <div id="calendarSummary" class="note">Belum ada kalender yang dibuat.</div>
@@ -339,7 +350,7 @@ button,.btn{max-width:100%;white-space:normal}
  <section id="about" style="margin:35px 0 55px">
   <div class="panel" style="padding:22px">
    <div class="eyebrow">ABOUT THE STUDIO</div><h2 style="margin:10px 0">Creative tools for every product story.</h2>
-   <p style="max-width:800px;color:var(--muted);font-size:13px">Payung AI Studio adalah creative workspace untuk ide konten produk, script, caption, kalender posting, Content Vault, pencatatan performa manual, storyboard, dan prompt video iklan. Fitur lokal berjalan di browser tanpa akun. Saat login, Vault, kalender, dan metrik disinkronkan ke Supabase; proyek cinematic tetap tersimpan lokal per akun di browser. Fitur Gemini mengirim prompt teks ke backend Payung AI Studio dan Google Gemini. Link marketplace tidak diambil otomatis.</p>
+   <p style="max-width:800px;color:var(--muted);font-size:13px">Payung AI Studio adalah creative workspace untuk ide konten produk, script, caption, kalender posting, Content Vault, pencatatan performa manual, storyboard, dan prompt video iklan. Fitur lokal berjalan di browser tanpa akun. Saat login, Vault, kalender, dan metrik disinkronkan ke Supabase; proyek cinematic tetap tersimpan lokal per akun di browser. Fitur AI Cloud mengirim prompt teks ke backend Payung AI Studio dan provider AI. Link marketplace tidak diambil otomatis.</p>
    <p style="color:var(--muted);font-size:11px">Catatan: Payung AI Studio bukan produk resmi Google dan tidak berafiliasi dengan Google. Nama Google Flow digunakan hanya untuk menjelaskan kompatibilitas alur kerja prompt.</p>
   </div>
  </section>
@@ -537,7 +548,7 @@ function restoreDraft(){
 function clearGeneratorDraft(){
  clearTimeout(draftTimer);document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(el=>el.value="");
  $("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;
- $("reference").value="";$("preview").removeAttribute("src");$("preview").style.display="none";$("projectName").value="";$("results").style.display="none";$("aiStoryboardOutput").textContent="Storyboard versi Gemini akan muncul di sini.";lastOutput="";
+ $("reference").value="";$("preview").removeAttribute("src");$("preview").style.display="none";$("projectName").value="";$("results").style.display="none";$("aiStoryboardOutput").textContent="Storyboard versi AI Cloud akan muncul di sini.";lastOutput="";
  selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();
 }
 function scheduleDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(persistDraft,350);}
@@ -701,14 +712,41 @@ $("calendarStart").value=payungLocalDate();
 currentCalendar=[];socialTemplateCards();
 
 
-/* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + Gemini */
+/* PAYUNG AI STUDIO — Supabase Auth + Cloudflare Worker + AI Cloud */
 const PAYUNG_SUPABASE_URL="https://mxseekqjwyrtkmjtyjun.supabase.co";
 const PAYUNG_SUPABASE_KEY="sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD";
 const PAYUNG_GENERATE_URL="https://payung-ai-studio.misbaahmed17.workers.dev/generate";
+const PAYUNG_ADMIN_SETTINGS_URL="https://payung-ai-studio.misbaahmed17.workers.dev/admin/provider-settings";
 const PAYUNG_AUTH_REDIRECT_URL="https://misba234.github.io/payung-ai-studio/";
 let payungSupabase=null,payungSyncTimer=null;
 let payungWorkspaceLoadGeneration=0,payungAuthRefreshGeneration=0,payungWorkspaceReadyUserId=null,payungWorkspaceUiInitialized=false;
 function payungStatus(message){const el=$("authStatus");if(el)el.textContent=message}
+function payungHideAdminProviderPanel(){
+ const panel=$("adminProviderPanel");if(panel){panel.hidden=true;panel.style.display="none";panel.setAttribute("aria-hidden","true");}
+ if($("adminProviderSelect"))$("adminProviderSelect").innerHTML="";
+ if($("adminModelId"))$("adminModelId").value="";
+ if($("adminProviderKeyStatus"))$("adminProviderKeyStatus").textContent="Status API key tidak tersedia.";
+ if($("adminProviderStatus"))$("adminProviderStatus").textContent="";
+}
+async function payungLoadAdminProviderSettings(session,expectedUserId,refreshGeneration){
+ payungHideAdminProviderPanel();
+ if(!session?.access_token||!expectedUserId||!payungSupabase)return;
+ try{
+  const response=await fetch(PAYUNG_ADMIN_SETTINGS_URL,{headers:{"Authorization":"Bearer "+session.access_token}});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||data?.is_admin!==true)return;
+  if(refreshGeneration!==payungAuthRefreshGeneration||payungSession?.user?.id!==expectedUserId||session.user?.id!==expectedUserId||!payungSessionVerified||payungSessionLocked)return;
+  const providers=Array.isArray(data.providers)?data.providers:[];
+  const select=$("adminProviderSelect");
+  if(!select||!providers.length)return;
+  select.innerHTML=providers.map(provider=>`<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`).join("");
+  select.value=data.active_provider||"";
+  $("adminModelId").value=String(data.model_id||"");
+  const activeProvider=providers.find(provider=>provider.id===data.active_provider);
+  $("adminProviderKeyStatus").textContent=activeProvider?.api_key_configured?"API key sudah terpasang sebagai Worker secret. Nilainya tidak ditampilkan.":"API key belum terpasang sebagai Worker secret; AI cloud akan tetap nonaktif sampai secret dikonfigurasi.";
+  const panel=$("adminProviderPanel");panel.hidden=false;panel.style.display="";panel.setAttribute("aria-hidden","false");
+ }catch(error){payungHideAdminProviderPanel();}
+}
 function clearPayungWorkspaceLocal(){
  currentCalendar=safeRead(CAL_KEY,[]);currentSocialText="";renderCalendar();updateVault();
  ["socialProduct","socialLink","socialAudience","socialBenefit","calendarProduct","metricViews","metricClicks","metricOrders","metricRevenue"].forEach(id=>{if($(id))$(id).value="";});
@@ -718,7 +756,7 @@ function payungSetWorkspaceLocked(locked){
  ["#generator","#results","#content-engine","#calendar","#vault"].forEach(selector=>{const el=document.querySelector(selector);if(el)el.inert=locked;});
 }
 function payungHideAccountWorkspaceUI(){
- payungSetWorkspaceLocked(true);currentCalendar=[];currentSocialText="";
+ payungHideAdminProviderPanel();payungSetWorkspaceLocked(true);currentCalendar=[];currentSocialText="";
  $("calendarSummary").textContent="Data kalender disembunyikan sampai sesi akun terverifikasi.";$("calendarList").innerHTML='<div class="empty">Sesi belum terverifikasi.</div>';
  $("vaultCount").textContent="—";$("scheduledCount").textContent="—";$("vaultList").innerHTML='<div class="empty">Data Vault disembunyikan sampai sesi akun terverifikasi.</div>';
  $("metricContent").innerHTML='<option value="">Sesi belum terverifikasi</option>';
@@ -729,6 +767,7 @@ function payungHideAccountWorkspaceUI(){
  clearGeneratorDraft();$("authSignOut").hidden=false;$("authUserLabel").textContent="Sesi belum diverifikasi";$("authCreditLabel").textContent="—";$("authAiLabel").textContent="Perlu verifikasi";
 }
 function payungApplySession(session,force=false){
+ payungHideAdminProviderPanel();
  const previousUserId=payungSession?.user?.id||null,newUserId=session?.user?.id||null;
  if(previousUserId===newUserId&&!force){payungSession=session;payungSessionVerified=true;payungSessionLocked=false;return false;}
  if(payungDraftRestored)persistDraft();clearTimeout(payungSyncTimer);payungWorkspaceLoadGeneration++;payungWorkspaceReadyUserId=null;
@@ -774,6 +813,8 @@ async function payungRefreshAccount(){
  if(!payungDraftRestored){refreshProjectList();restoreDraft();payungDraftRestored=true;}
  if(!payungWorkspaceUiInitialized){clearPayungWorkspaceLocal();payungWorkspaceUiInitialized=true;}
  if(session&&payungWorkspaceReadyUserId!==newUserId)await payungLoadWorkspace(newUserId);
+ if(refreshGeneration!==payungAuthRefreshGeneration||(payungSession?.user?.id||null)!==newUserId)return;
+ if(session)await payungLoadAdminProviderSettings(session,newUserId,refreshGeneration);else payungHideAdminProviderPanel();
  if(refreshGeneration!==payungAuthRefreshGeneration||(payungSession?.user?.id||null)!==newUserId)return;
  const logged=!!session;
  $("authSignOut").hidden=!logged;$("authUserLabel").textContent=logged?(session.user.email||"Pengguna"):"Guest";$("authAiLabel").textContent=logged?"Terhubung":"Offline";$("authCreditLabel").textContent="—";
@@ -861,7 +902,31 @@ $("authSignUp").addEventListener("click",async()=>{
  else if(data.session) {await payungRefreshAccount();payungStatus("Akun berhasil dibuat dan login.")}
  else payungStatus("Pendaftaran diterima. Buka email verifikasi terbaru dari Payung AI Studio. Setelah menekan tombol konfirmasi, Anda akan diarahkan kembali ke website ini. Jika tautan lama mengarah ke alamat yang salah, minta email verifikasi baru.");
 });
-$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;const synced=await payungFlushWorkspace();if(!synced)payungStatus("Workspace belum tersinkron; salinan lokal akun tetap tersimpan di perangkat ini.");const {error}=await payungSupabase.auth.signOut();if(error){payungStatus("Gagal keluar: "+error.message);return}await payungRefreshAccount()});
+$("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;const synced=await payungFlushWorkspace();if(!synced)payungStatus("Workspace belum tersinkron; salinan lokal akun tetap tersimpan di perangkat ini.");const {error}=await payungSupabase.auth.signOut();if(error){payungStatus("Gagal keluar: "+error.message);return}payungHideAdminProviderPanel();await payungRefreshAccount()});
+let payungAdminSaveInFlight=false;
+async function payungSaveAdminProviderSettings(){
+ if(payungAdminSaveInFlight)return;
+ if(!payungSupabase||!payungSessionVerified||payungSessionLocked||!payungSession?.user?.id){payungStatus("Login admin diperlukan untuk mengubah provider.");return;}
+ const providerId=$("adminProviderSelect").value,modelId=$("adminModelId").value.trim(),status=$("adminProviderStatus"),button=$("adminProviderSave");
+ if(!providerId||!modelId||!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$/.test(modelId)){status.textContent="Pilih provider dan isi model ID yang valid.";return;}
+ payungAdminSaveInFlight=true;button.disabled=true;status.textContent="Menyimpan pengaturan provider/model…";
+ try{
+  const result=await payungSupabase.auth.getSession(),session=result?.data?.session||null;
+  if(!session||session.user?.id!==payungSession.user.id||!payungSessionVerified||payungSessionLocked)throw new Error("Sesi admin tidak valid. Login ulang.");
+  const response=await fetch(PAYUNG_ADMIN_SETTINGS_URL,{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({active_provider:providerId,model_id:modelId})});
+  const data=await response.json().catch(()=>null);
+  if(!response.ok||data?.is_admin!==true)throw new Error(data?.error||"Pengaturan provider gagal disimpan.");
+  await payungLoadAdminProviderSettings(session,session.user.id,payungAuthRefreshGeneration);
+  status.textContent="Pengaturan provider/model tersimpan. Tidak ada panggilan AI yang dilakukan saat menyimpan.";
+ }catch(error){status.textContent=error.message||"Gagal menyimpan pengaturan.";}
+ finally{payungAdminSaveInFlight=false;button.disabled=false;}
+}
+$("adminProviderSave").addEventListener("click",payungSaveAdminProviderSettings);
+$("adminProviderReload").addEventListener("click",async()=>{
+ if(!payungSupabase||!payungSessionVerified||payungSessionLocked||!payungSession?.user?.id)return;
+ try{const result=await payungSupabase.auth.getSession(),session=result?.data?.session||null;if(session?.user?.id===payungSession.user.id)await payungLoadAdminProviderSettings(session,session.user.id,payungAuthRefreshGeneration);}
+ catch(error){payungHideAdminProviderPanel();}
+});
 let payungAiRequestInFlight=false;
 function payungCreateAIRequestId(){
  const cryptoApi=globalThis.crypto;
@@ -876,7 +941,7 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
  if(payungAiRequestInFlight){toast("Permintaan AI lain sedang diproses. Tunggu hingga selesai.");return null}
  payungAiRequestInFlight=true;
  const button=$(buttonId);const originalLabel=button?.textContent||"";
- if(button){button.disabled=true;button.textContent="Gemini sedang memproses...";}
+ if(button){button.disabled=true;button.textContent="AI Cloud sedang memproses...";}
  try{
   if(!payungSessionVerified||payungSessionLocked){toast("Sesi belum terverifikasi. Coba lagi setelah koneksi pulih.");return null}
   if(!payungSupabase){toast("Autentikasi belum siap.");return null}
@@ -884,7 +949,7 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
   try{const result=await payungSupabase.auth.getSession();session=result?.data?.session||null;}
   catch(error){payungRequestSessionRefresh();toast("Sesi belum dapat diverifikasi. Coba lagi setelah koneksi pulih.");return null;}
   const currentUserId=payungSession?.user?.id||null,sessionUserId=session?.user?.id||null;
-  if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null;}
+  if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan AI Cloud.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null;}
   if(!payungSessionVerified||payungSessionLocked||!currentUserId||sessionUserId!==currentUserId){payungRequestSessionRefresh();toast("Sesi akun berubah. Periksa status login lalu coba lagi.");return null;}
   const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"Idempotency-Key":idempotencyKey},body:JSON.stringify({action,prompt})});
   const data=await response.json();let activeSession=null;
@@ -894,7 +959,8 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
   if(!payungSessionVerified||payungSessionLocked||activeUserId!==sessionUserId||displayedUserId!==sessionUserId){payungRequestSessionRefresh();return null;}
   if(!response.ok)throw new Error(data.error||"Permintaan AI gagal");
   $("authCreditLabel").textContent=String(data.credits_remaining??"—");
-  $("authAiLabel").textContent="Aktif";
+  if(data.credit_finalized===false){$("authAiLabel").textContent="Perlu verifikasi";payungStatus(data.warning||"Hasil AI dibuat; status kredit perlu diperiksa. Jangan kirim ulang.");}
+  else {$("authAiLabel").textContent="Aktif";if(data.warning)payungStatus(data.warning);}
   return data.output;
  }catch(error){toast(error.message);return null}
  finally{payungAiRequestInFlight=false;if(button){button.disabled=false;button.textContent=originalLabel}}
@@ -922,14 +988,14 @@ $("generateAIStoryboard").addEventListener("click",async()=>{
 ${brief}
 Berikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
  const output=await payungGenerateAI("storyboard",prompt,"generateAIStoryboard");
- if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard Gemini berhasil dibuat.")}
+ if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard AI Cloud berhasil dibuat.")}
 });
 $("makeCalendarAI").addEventListener("click",async()=>{
  const product=$("calendarProduct").value.trim()||$("socialProduct").value.trim();if(!product){toast("Masukkan nama produk untuk kalender.");return}
  const start=$("calendarStart").value||new Date().toISOString().slice(0,10);
  const prompt=`Buat strategi kalender konten 30 hari untuk produk ${product}. Mulai tanggal ${start}. Susun tabel hari/tanggal, ide konten, hook, format video, CTA, dan catatan visual. Variasikan edukasi, review jujur, POV, unboxing, demo, perbandingan faktual, FAQ, dan showcase. Jangan membuat klaim atau spesifikasi yang tidak diberikan. Tandai fakta yang harus diverifikasi.`;
  const output=await payungGenerateAI("calendar",prompt,"makeCalendarAI");
- if(output){$("calendarAIOutput").textContent=output;toast("Strategi kalender Gemini berhasil dibuat.")}
+ if(output){$("calendarAIOutput").textContent=output;toast("Strategi kalender AI Cloud berhasil dibuat.")}
 });
 $("makeSocialAI").addEventListener("click",async()=>{
  const product=$("socialProduct").value.trim();
@@ -943,7 +1009,7 @@ Format: ${socialFormats[$("socialFormat").value]?.name||"Konten social commerce"
 Gaya komunikasi: ${$("socialTone").value}
 Buat: 3 alternatif hook, script video 20 detik dengan timestamp dan arahan visual, caption, CTA, teks overlay, serta catatan verifikasi klaim. Hindari klaim kesehatan/hasil yang tidak dibuktikan. Jika informasi tidak tersedia, tandai [PERLU VERIFIKASI].`;
  const output=await payungGenerateAI("social-content",prompt);
- if(output){currentSocialText="PAYUNG AI STUDIO — GEMINI AI\n\n"+output;$("socialOutput").textContent=currentSocialText;toast("Konten berhasil dibuat oleh Gemini AI.");}
+ if(output){currentSocialText="PAYUNG AI STUDIO — AI CLOUD\n\n"+output;$("socialOutput").textContent=currentSocialText;toast("Konten berhasil dibuat oleh AI Cloud.");}
 });
 payungAuthInit();
 
