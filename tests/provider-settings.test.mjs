@@ -47,6 +47,8 @@ function installMockFetch({
     remaining_tokens: 499980, blocked: false
   },
   tokenBudgetSettleStatus = 200,
+  providerBlockResult = null,
+  providerBlockStatus = 200,
   completion = { choices: [{ message: { content: "Output AI mock lokal." } }], usage: { prompt_tokens: 12, completion_tokens: 8, total_tokens: 20 } },
   providerStatus = 200,
   providerThrow = false,
@@ -72,10 +74,32 @@ function installMockFetch({
     if (url.pathname === "/rest/v1/ai_provider_settings" && method === "PATCH") return jsonResponse([{ ...providerSettings, ...body }]);
     if (url.pathname === "/rest/v1/rpc/consume_ai_credit_idempotent") return jsonResponse(reservation, reserveStatus);
     if (url.pathname === "/rest/v1/rpc/reserve_ai_provider_tokens") return jsonResponse(tokenBudgetReservation, tokenBudgetReserveStatus);
-    if (url.pathname === "/rest/v1/rpc/settle_ai_provider_tokens") return jsonResponse(tokenBudgetSettlement, tokenBudgetSettleStatus);
+    if (url.pathname === "/rest/v1/rpc/settle_ai_provider_tokens") {
+      const settlementResult = tokenBudgetSettlement && Object.hasOwn(tokenBudgetSettlement, "provider")
+        ? tokenBudgetSettlement
+        : { ...tokenBudgetSettlement, provider: providerSettings.active_provider };
+      return jsonResponse(settlementResult, tokenBudgetSettleStatus);
+    }
+    if (url.pathname === "/rest/v1/rpc/block_ai_provider_tokens") {
+      return jsonResponse(providerBlockResult || {
+        blocked: true, blocked_reason: body.p_block_reason, provider: body.p_provider
+      }, providerBlockStatus);
+    }
     if (url.pathname === "/rest/v1/rpc/refund_ai_credit") return jsonResponse(true);
     if (url.pathname === "/rest/v1/rpc/finalize_ai_credit") return jsonResponse(finalizeValue, finalizeStatus);
     if (url.pathname === "/v1/chat/completions") {
+      if (providerThrow) throw providerError || new Error("mock provider network failure");
+      if (providerHang) {
+        return await new Promise((resolve, reject) => {
+          const signal = init.signal;
+          const onAbort = () => reject(new Error("mock provider aborted"));
+          if (signal?.aborted) onAbort();
+          else signal?.addEventListener("abort", onAbort, { once: true });
+        });
+      }
+      return jsonResponse(completion, providerStatus);
+    }
+    if (url.hostname === "generativelanguage.googleapis.com" && url.pathname.endsWith(":generateContent")) {
       if (providerThrow) throw providerError || new Error("mock provider network failure");
       if (providerHang) {
         return await new Promise((resolve, reject) => {
@@ -108,6 +132,10 @@ async function testAdminOnlyAndNoSecretReturned() {
   assert.equal(data.providers[0].api_key_configured, true);
   assert.equal(JSON.stringify(data).includes(localKey), false);
   assert.equal(JSON.stringify(data).includes("CODECRAFT_API_KEY"), false);
+  const gemini = data.providers.find(provider => provider.id === "gemini");
+  assert.equal(gemini.label, "Google Gemini");
+  assert.equal(gemini.api_key_configured, false);
+  assert.equal(JSON.stringify(data).includes("GEMINI_API_KEY"), false);
   assert.equal(calls.some(call => call.url.startsWith("https://codecraftapi.com/")), false);
 }
 
@@ -156,6 +184,20 @@ async function testAdminCanSaveOnlyProviderAndModel() {
   assert.equal(data.model_id, "deepseek-v4-flash-0731");
   assert.deepEqual(Object.keys(update.body).sort(), ["active_provider", "model_id", "updated_at", "updated_by"].sort());
   assert.equal(calls.some(call => call.url.startsWith("https://codecraftapi.com/")), false);
+}
+
+async function testAdminCanSelectGeminiWithoutGeneration() {
+  const calls = installMockFetch();
+  const response = await worker.fetch(request("/admin/provider-settings", {
+    method: "POST", headers: bearer, body: { active_provider: "gemini", model_id: "gemini-3.8-flash" }
+  }), workerEnv);
+  const data = await response.json();
+  const update = calls.find(call => call.url.includes("/rest/v1/ai_provider_settings") && call.method === "PATCH");
+  assert.equal(response.status, 200);
+  assert.equal(data.active_provider, "gemini");
+  assert.equal(data.model_id, "gemini-3.8-flash");
+  assert.equal(update.body.active_provider, "gemini");
+  assert.equal(calls.some(call => call.url.includes("generativelanguage.googleapis.com")), false);
 }
 
 async function testUnknownProviderAndInvalidModelAreRejected() {
@@ -227,6 +269,185 @@ async function testCodeCraftOpenAICompatibleAdapter() {
   assert.equal(tokenSettleCall.body.p_usage_known, true);
   assert.equal(calls.some(call => call.url.includes("generativelanguage.googleapis.com")), false);
   assert.equal(calls.filter(call => call.url === "https://codecraftapi.com/v1/chat/completions").length, 1);
+}
+
+async function testGeminiAdapterUsesServerKeyAndSeparateTokenBudget() {
+  const localKey = "local-gemini-key-not-real";
+  const completion = {
+    candidates: [{ content: { role: "model", parts: [{ text: "Output Gemini mock lokal." }] }, finishReason: "STOP" }],
+    usageMetadata: { promptTokenCount: 14, candidatesTokenCount: 22, totalTokenCount: 36 }
+  };
+  const calls = installMockFetch({
+    providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+    completion
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, GEMINI_API_KEY: localKey });
+  const data = await response.json();
+  const providerCall = calls.find(call => call.url === "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent");
+  const tokenReserveCall = calls.find(call => call.url.includes("reserve_ai_provider_tokens"));
+  const tokenSettleCall = calls.find(call => call.url.includes("settle_ai_provider_tokens"));
+  assert.equal(response.status, 200);
+  assert.equal(data.output, "Output Gemini mock lokal.");
+  assert.equal(data.provider, "gemini");
+  assert.equal(data.model, "gemini-3.8-flash");
+  assert.equal(data.credit_finalized, true);
+  assert.equal(data.token_budget_finalized, true);
+  assert.equal(JSON.stringify(data).includes(localKey), false);
+  assert.equal(providerCall.headers.get("x-goog-api-key"), localKey);
+  assert.equal(providerCall.headers.has("Authorization"), false);
+  assert.deepEqual(providerCall.body.contents, [{ role: "user", parts: [{ text: generationBody.prompt }] }]);
+  assert.equal(providerCall.body.generationConfig.maxOutputTokens, 6000);
+  assert.equal(tokenReserveCall.body.p_provider, "gemini");
+  assert.equal(tokenSettleCall.body.p_actual_tokens, 36);
+  assert.equal(tokenSettleCall.body.p_usage_known, true);
+  assert.equal(calls.some(call => call.url.includes("codecraftapi.com/v1/chat/completions")), false);
+  assert.equal(calls.filter(call => call.url.includes("generativelanguage.googleapis.com") && call.method === "POST").length, 1);
+}
+
+async function testGeminiMissingKeyDoesNotReserveOrCallProvider() {
+  const calls = installMockFetch({ providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" } });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), workerEnv);
+  assert.equal(response.status, 503);
+  assert.equal(calls.some(call => call.url.includes("consume_ai_credit_idempotent")), false);
+  assert.equal(calls.some(call => call.url.includes("reserve_ai_provider_tokens")), false);
+  assert.equal(calls.some(call => call.url.includes("generativelanguage.googleapis.com")), false);
+}
+
+async function testGeminiRateLimitHardStopsWithoutCodeCraftFallback() {
+  const calls = installMockFetch({
+    providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+    providerStatus: 429,
+    completion: { error: { code: 429, status: "RESOURCE_EXHAUSTED", message: "daily quota exhausted" } }
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, GEMINI_API_KEY: "local-gemini-key-not-real" });
+  const settlement = calls.find(call => call.url.includes("settle_ai_provider_tokens"));
+  const block = calls.find(call => call.url.includes("block_ai_provider_tokens"));
+  assert.equal(response.status, 502);
+  assert.equal(calls.find(call => call.url.includes("reserve_ai_provider_tokens")).body.p_provider, "gemini");
+  assert.equal(settlement.body.p_force_block, true);
+  assert.equal(settlement.body.p_block_reason, "provider_rate_limited");
+  assert.equal(block.body.p_provider, "gemini");
+  assert.equal(block.body.p_block_reason, "provider_rate_limited");
+  assert.equal((await response.clone().json()).provider_blocked, true);
+  assert.equal(calls.filter(call => call.url.includes("generativelanguage.googleapis.com") && call.method === "POST").length, 1);
+  assert.equal(calls.some(call => call.url.includes("codecraftapi.com/v1/chat/completions")), false);
+}
+
+async function testGeminiBlockedBudgetStopsBeforeAnyProviderCall() {
+  const calls = installMockFetch({
+    providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+    tokenBudgetReservation: {
+      allowed: false, duplicate: false, token_limit: 500000, used_tokens: 100,
+      reserved_tokens: 0, remaining_tokens: 499900, blocked: true, blocked_reason: "provider_rate_limited"
+    }
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, GEMINI_API_KEY: "local-gemini-key-not-real" });
+  assert.equal(response.status, 429);
+  assert.equal(calls.some(call => call.url.includes("refund_ai_credit")), true);
+  assert.equal(calls.some(call => call.url.includes("generativelanguage.googleapis.com")), false);
+  assert.equal(calls.some(call => call.url.includes("codecraftapi.com/v1/chat/completions")), false);
+}
+
+async function testSettlementFailureUsesIndependentHardBlockRpc() {
+  const calls = installMockFetch({
+    providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+    tokenBudgetSettleStatus: 503,
+    providerStatus: 429,
+    completion: { error: { status: "RESOURCE_EXHAUSTED", message: "rate limit" } }
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, GEMINI_API_KEY: "local-gemini-key-not-real" });
+  const data = await response.json();
+  const block = calls.find(call => call.url.includes("block_ai_provider_tokens"));
+  const settlements = calls.filter(call => call.url.includes("settle_ai_provider_tokens"));
+  const blocks = calls.filter(call => call.url.includes("block_ai_provider_tokens"));
+  assert.equal(response.status, 502);
+  assert.equal(data.provider_blocked, true);
+  assert.equal(data.token_budget_finalized, false);
+  assert.equal(block.body.p_provider, "gemini");
+  assert.equal(block.body.p_block_reason, "provider_rate_limited");
+  assert.match(data.warning, /reservasi maksimum tetap dihitung/);
+  assert.equal(settlements.length, 2);
+  assert.equal(blocks.length, 1);
+  assert.equal(calls.indexOf(settlements[1]) < calls.indexOf(blocks[0]), true);
+}
+
+async function testFailedHardBlockConfirmationIsReported() {
+  const calls = installMockFetch({
+    providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+    tokenBudgetSettleStatus: 503,
+    providerBlockStatus: 503,
+    providerStatus: 429,
+    completion: { error: { status: "RESOURCE_EXHAUSTED", message: "rate limit" } }
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, GEMINI_API_KEY: "local-gemini-key-not-real" });
+  const data = await response.json();
+  assert.equal(response.status, 502);
+  assert.equal(data.provider_blocked, false);
+  assert.match(data.warning, /belum terkonfirmasi/);
+  assert.equal(calls.filter(call => call.url.includes("block_ai_provider_tokens")).length, 2);
+}
+
+async function testMismatchedHardBlockConfirmationIsRejected() {
+  for (const providerBlockResult of [
+    { blocked: true, provider: "codecraft", blocked_reason: "provider_rate_limited" },
+    { blocked: true, provider: "gemini", blocked_reason: "unknown_reason" },
+    { blocked: true, provider: "gemini", blocked_reason: "token_cap_reached" }
+  ]) {
+    const calls = installMockFetch({
+      providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+      providerBlockResult,
+      providerStatus: 429,
+      completion: { error: { status: "RESOURCE_EXHAUSTED", message: "rate limit" } }
+    });
+    const response = await worker.fetch(request("/generate", {
+      method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+    }), { ...workerEnv, GEMINI_API_KEY: "local-gemini-key-not-real" });
+    const data = await response.json();
+    assert.equal(response.status, 502);
+    assert.equal(data.provider_blocked, false);
+    assert.match(data.warning, /belum terkonfirmasi/);
+    assert.equal(calls.filter(call => call.url.includes("block_ai_provider_tokens")).length, 2);
+  }
+}
+
+async function testNetworkFailureWithUnsettledTokensWarnsReservationHeld() {
+  const calls = installMockFetch({ providerThrow: true, tokenBudgetSettleStatus: 503 });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, CODECRAFT_API_KEY: "local-test-only" });
+  const data = await response.json();
+  assert.equal(response.status, 502);
+  assert.equal(data.token_budget_finalized, false);
+  assert.match(data.warning, /reservasi maksimum tetap dihitung/);
+  assert.equal(calls.filter(call => call.url.includes("/chat/completions")).length, 1);
+}
+
+async function testEmptyGeminiOutputWithUnsettledTokensWarnsReservationHeld() {
+  const calls = installMockFetch({
+    providerSettings: { ...settings, active_provider: "gemini", model_id: "gemini-3.8-flash" },
+    tokenBudgetSettleStatus: 503,
+    completion: { candidates: [] }
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, GEMINI_API_KEY: "local-gemini-key-not-real" });
+  const data = await response.json();
+  assert.equal(response.status, 502);
+  assert.equal(data.token_budget_finalized, false);
+  assert.match(data.warning, /reservasi maksimum tetap dihitung/);
+  assert.equal(calls.filter(call => call.url.includes("generativelanguage.googleapis.com") && call.method === "POST").length, 1);
 }
 
 async function testDuplicateDoesNotCallProvider() {
@@ -323,12 +544,13 @@ async function testProviderRateLimitDoesNotTriggerFallback() {
 async function testProviderQuotaOrBillingMessageHardBlocks() {
   const calls = installMockFetch({
     providerStatus: 400,
-    completion: { error: { code: "insufficient_quota", message: "free quota exhausted" } }
+    completion: { error: { code: "insufficient_quota", message: "fake-api-key-echo-from-upstream" } }
   });
   const response = await worker.fetch(request("/generate", {
     method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
   }), { ...workerEnv, CODECRAFT_API_KEY: "local-test-only" });
   assert.equal(response.status, 502);
+  assert.equal((await response.clone().text()).includes("fake-api-key-echo-from-upstream"), false);
   const settlement = calls.find(call => call.url.includes("settle_ai_provider_tokens"));
   assert.equal(settlement.body.p_force_block, true);
   assert.equal(settlement.body.p_block_reason, "provider_quota_or_balance_exhausted");
@@ -373,6 +595,24 @@ async function testQuotaSettlementFailureKeepsOutputAndReservation() {
   assert.match(data.warning, /reservasi maksimum tetap ditahan/);
 }
 
+async function testSettlementForWrongProviderIsNotConfirmed() {
+  const calls = installMockFetch({
+    tokenBudgetSettlement: {
+      settled: true, duplicate: false, status: "settled", provider: "gemini",
+      accounted_tokens: 20, overrun: false, token_limit: 500000,
+      used_tokens: 20, reserved_tokens: 0, remaining_tokens: 499980, blocked: false
+    }
+  });
+  const response = await worker.fetch(request("/generate", {
+    method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
+  }), { ...workerEnv, CODECRAFT_API_KEY: "local-test-only" });
+  const data = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(data.token_budget_finalized, false);
+  assert.match(data.warning, /reservasi maksimum tetap ditahan/);
+  assert.equal(calls.some(call => call.url.includes("/chat/completions")), true);
+}
+
 async function testAmbiguousProviderNetworkFailureDoesNotFallback() {
   const calls = installMockFetch({ providerThrow: true });
   const response = await worker.fetch(request("/generate", {
@@ -401,13 +641,14 @@ async function testWorkerHasNoActiveAlternateForCertifiedPreSendFailure() {
 }
 
 async function testProviderTimeoutAbortsAndRefunds() {
-  const calls = installMockFetch({ providerHang: true });
+  const calls = installMockFetch({ providerHang: true, tokenBudgetSettleStatus: 503 });
   const response = await worker.fetch(request("/generate", {
     method: "POST", headers: { ...bearer, ...idempotency }, body: generationBody
   }), { ...workerEnv, CODECRAFT_API_KEY: "local-test-only", PROVIDER_TIMEOUT_MS: 50 });
   const data = await response.json();
   assert.equal(response.status, 502);
   assert.match(data.error, /melewati batas waktu/);
+  assert.match(data.warning, /reservasi maksimum tetap dihitung/);
   assert.equal(calls.filter(call => call.url.includes("/chat/completions")).length, 1);
   assert.equal(calls.some(call => call.url.includes("refund_ai_credit")), true);
 }
@@ -456,6 +697,23 @@ async function testTokenCapMigrationIsPrivateAndCumulative() {
   assert.match(sql, /provider_rate_limited/);
 }
 
+async function testGeminiBudgetMigrationKeepsCodeCraftAndAddsCooldown() {
+  const sql = await readFile(new URL("../migrations/20261114_gemini_provider_budget.sql", import.meta.url), "utf8");
+  assert.match(sql, /CHECK \(provider IN \('codecraft', 'gemini'\)\)/i);
+  assert.match(sql, /VALUES \('gemini', 500000, 0, 0\)/i);
+  assert.match(sql, /p_provider NOT IN \('codecraft', 'gemini'\)/i);
+  assert.match(sql, /v_blocked_reason = 'provider_rate_limited'/i);
+  assert.match(sql, /interval '24 hours'/i);
+  assert.match(sql, /SECURITY DEFINER/i);
+  assert.match(sql, /SET search_path TO ''/i);
+  assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.reserve_ai_provider_tokens[\s\S]*TO service_role/i);
+  assert.match(sql, /CREATE OR REPLACE FUNCTION public\.block_ai_provider_tokens/i);
+  assert.match(sql, /GRANT EXECUTE ON FUNCTION public\.block_ai_provider_tokens[\s\S]*TO service_role/i);
+  assert.equal((sql.match(/'provider', v_provider/g) || []).length, 2);
+  assert.match(sql, /budget-before-reservation order/i);
+  assert.match(sql, /caps do not auto-reset/i);
+}
+
 async function testAdminPreflightNeedsNoLoginOrProviderCall() {
   const calls = installMockFetch();
   const response = await worker.fetch(request("/admin/provider-settings", { method: "OPTIONS" }), workerEnv);
@@ -471,11 +729,21 @@ const tests = [
   testUnconfirmedAndNonAdminUsersAreRejected,
   testAdminSecretMissingFailsClosed,
   testAdminCanSaveOnlyProviderAndModel,
+  testAdminCanSelectGeminiWithoutGeneration,
   testUnknownProviderAndInvalidModelAreRejected,
   testInvalidOriginIsRejected,
   testOversizedGenerationBodyIsRejectedBeforeAuth,
   testMissingKeyDoesNotReserveCreditOrCallProvider,
   testCodeCraftOpenAICompatibleAdapter,
+  testGeminiAdapterUsesServerKeyAndSeparateTokenBudget,
+  testGeminiMissingKeyDoesNotReserveOrCallProvider,
+  testGeminiRateLimitHardStopsWithoutCodeCraftFallback,
+  testSettlementFailureUsesIndependentHardBlockRpc,
+  testFailedHardBlockConfirmationIsReported,
+  testMismatchedHardBlockConfirmationIsRejected,
+  testNetworkFailureWithUnsettledTokensWarnsReservationHeld,
+  testEmptyGeminiOutputWithUnsettledTokensWarnsReservationHeld,
+  testGeminiBlockedBudgetStopsBeforeAnyProviderCall,
   testDuplicateDoesNotCallProvider,
   testReservationFailureDoesNotCallProviderOrLeakDatabaseDetail,
   testTokenCapDeniedRefundsAndStopsBeforeProvider,
@@ -487,6 +755,7 @@ const tests = [
   testProviderPaymentRequiredHardBlocks,
   testMissingUsageSettlesFullReservation,
   testQuotaSettlementFailureKeepsOutputAndReservation,
+  testSettlementForWrongProviderIsNotConfirmed,
   testAmbiguousProviderNetworkFailureDoesNotFallback,
   testWorkerHasNoActiveAlternateForCertifiedPreSendFailure,
   testProviderTimeoutAbortsAndRefunds,
@@ -494,6 +763,7 @@ const tests = [
   testGeneratedOutputSurvivesCreditFinalizationFailure,
   testMigrationKeepsConfigServerOnly,
   testTokenCapMigrationIsPrivateAndCumulative,
+  testGeminiBudgetMigrationKeepsCodeCraftAndAddsCooldown,
   testAdminPreflightNeedsNoLoginOrProviderCall
 ];
 

@@ -957,7 +957,7 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
   catch(error){payungRequestSessionRefresh();return null;}
   const activeUserId=activeSession?.user?.id||null,displayedUserId=payungSession?.user?.id||null;
   if(!payungSessionVerified||payungSessionLocked||activeUserId!==sessionUserId||displayedUserId!==sessionUserId){payungRequestSessionRefresh();return null;}
-  if(!response.ok)throw new Error(data.error||"Permintaan AI gagal");
+  if(!response.ok){if(data.warning){$("authAiLabel").textContent="Perlu verifikasi";payungStatus(data.warning);}throw new Error(data.error||"Permintaan AI gagal");}
   $("authCreditLabel").textContent=String(data.credits_remaining??"—");
   if(data.credit_finalized===false){$("authAiLabel").textContent="Perlu verifikasi";payungStatus(data.warning||"Hasil AI dibuat; status kredit perlu diperiksa. Jangan kirim ulang.");}
   else {$("authAiLabel").textContent="Aktif";if(data.warning)payungStatus(data.warning);}

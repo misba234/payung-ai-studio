@@ -25,6 +25,16 @@ const PROVIDERS = Object.freeze({
     billingGroup: "codecraft-account",
     // No alternate provider is configured or authorized in this local patch.
     failovers: Object.freeze([])
+  }),
+  gemini: Object.freeze({
+    id: "gemini",
+    label: "Google Gemini",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    apiKeyEnv: "GEMINI_API_KEY",
+    adapter: "google-generate-content",
+    billingGroup: "google-ai-studio-account",
+    // Gemini is opt-in from the admin selector only; it is never an automatic fallback.
+    failovers: Object.freeze([])
   })
 });
 
@@ -124,14 +134,16 @@ function estimateReservedTokens(prompt) {
   return Math.min(TOKEN_BUDGET_CAP, promptBytes + MAX_COMPLETION_TOKENS + TOKEN_RESERVATION_OVERHEAD);
 }
 
-function reportedTokenUsage(providerData) {
-  const value = providerData?.usage?.total_tokens;
+function reportedTokenUsage(providerData, provider) {
+  const value = provider?.adapter === "google-generate-content"
+    ? providerData?.usageMetadata?.totalTokenCount
+    : providerData?.usage?.total_tokens;
   return Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
 function providerLimitBlockReason(status, providerData) {
   const error = providerData?.error;
-  const details = [error?.code, error?.type, error?.message, providerData?.code, providerData?.message]
+  const details = [error?.code, error?.type, error?.status, error?.message, providerData?.code, providerData?.status, providerData?.message]
     .filter(value => typeof value === "string")
     .join(" ")
     .toLowerCase();
@@ -144,13 +156,13 @@ function providerLimitBlockReason(status, providerData) {
   return null;
 }
 
-async function reserveProviderTokenBudget(rpcHeaders, userId, idempotencyKey, requestedTokens) {
+async function reserveProviderTokenBudget(rpcHeaders, providerId, userId, idempotencyKey, requestedTokens) {
   try {
     const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/reserve_ai_provider_tokens", {
       method: "POST",
       headers: rpcHeaders,
       body: JSON.stringify({
-        p_provider: "codecraft",
+        p_provider: providerId,
         p_user_id: userId,
         p_idempotency_key: idempotencyKey,
         p_requested_tokens: requestedTokens
@@ -165,7 +177,24 @@ async function reserveProviderTokenBudget(rpcHeaders, userId, idempotencyKey, re
   }
 }
 
-async function settleProviderTokenBudget(rpcHeaders, reservationId, usageTokens, forceBlockReason = null) {
+function confirmedBlockReason(requestedReason, actualReason) {
+  return actualReason === requestedReason;
+}
+
+function safeProviderErrorMessage(status, blockReason) {
+  if (blockReason === "provider_rate_limited") {
+    return "Provider membatasi permintaan atau kuotanya saat ini; rute ini dihentikan sementara.";
+  }
+  if (blockReason === "provider_quota_or_balance_exhausted") {
+    return "Kuota atau saldo provider tidak tersedia; rute ini dihentikan sampai administrator meninjau.";
+  }
+  if (status === 401) return "Provider menolak kredensial server; administrator perlu memeriksa konfigurasi secret.";
+  if (status === 402) return "Provider menolak permintaan karena status kuota atau billing.";
+  if (status === 429) return "Provider membatasi permintaan sementara.";
+  return `Provider gagal memproses permintaan (HTTP ${status}).`;
+}
+
+async function settleProviderTokenBudget(rpcHeaders, reservationId, usageTokens, forceBlockReason = null, expectedProviderId = null) {
   const payload = {
     p_reservation_id: reservationId,
     p_actual_tokens: usageTokens,
@@ -183,7 +212,33 @@ async function settleProviderTokenBudget(rpcHeaders, reservationId, usageTokens,
       });
       if (!response.ok) continue;
       const data = await response.json().catch(() => null);
-      if (data && (data.settled === true || data.duplicate === true)) return { ok: true, data };
+      const providerConfirmed = !expectedProviderId || data?.provider === expectedProviderId;
+      const blockConfirmed = !forceBlockReason || (
+        data?.blocked === true && confirmedBlockReason(forceBlockReason, data?.blocked_reason)
+      );
+      if (data && providerConfirmed && (data.settled === true || data.duplicate === true) && blockConfirmed) {
+        return { ok: true, data };
+      }
+    } catch {}
+  }
+  return { ok: false, data: null };
+}
+
+async function blockProviderTokenBudget(rpcHeaders, providerId, blockReason) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const response = await fetch(SUPABASE_URL + "/rest/v1/rpc/block_ai_provider_tokens", {
+        method: "POST",
+        headers: rpcHeaders,
+        body: JSON.stringify({ p_provider: providerId, p_block_reason: blockReason })
+      });
+      if (!response.ok) continue;
+      const data = await response.json().catch(() => null);
+      if (data?.blocked === true
+          && data?.provider === providerId
+          && confirmedBlockReason(blockReason, data?.blocked_reason)) {
+        return { ok: true, data };
+      }
     } catch {}
   }
   return { ok: false, data: null };
@@ -292,6 +347,12 @@ function extractOpenAIChatText(data) {
   return "";
 }
 
+function extractGeminiText(data) {
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return "";
+  return parts.map(part => typeof part?.text === "string" ? part.text : "").filter(Boolean).join("\n").trim();
+}
+
 async function generate(request, env) {
   const { origin, response: originError } = rejectOrigin(request);
   if (originError) return originError;
@@ -327,7 +388,7 @@ async function generate(request, env) {
   if (typeof apiKey !== "string" || !apiKey.trim()) {
     return reply({ error: "API key provider belum dipasang sebagai Worker secret." }, 503, origin);
   }
-  if (provider.adapter !== "openai-chat-completions") {
+  if (!new Set(["openai-chat-completions", "google-generate-content"]).has(provider.adapter)) {
     return reply({ error: "Adapter provider belum tersedia." }, 503, origin);
   }
 
@@ -383,7 +444,7 @@ async function generate(request, env) {
 
   const requestedTokenBudget = estimateReservedTokens(prompt);
   const tokenBudgetReservation = await reserveProviderTokenBudget(
-    rpcHeaders, auth.user.id, idempotencyKey, requestedTokenBudget
+    rpcHeaders, provider.id, auth.user.id, idempotencyKey, requestedTokenBudget
   );
   if (!tokenBudgetReservation.ok) {
     const refunded = await refundReservation();
@@ -405,7 +466,7 @@ async function generate(request, env) {
   if (tokenBudget.allowed !== true || !Number.isSafeInteger(tokenBudgetReservationId) || tokenBudgetReservationId <= 0) {
     const refunded = await refundReservation();
     const error = tokenBudget.blocked === true
-      ? "Provider CodeCraft diblokir atau cap token Payung AI Studio telah tercapai. Tidak ada permintaan provider yang dikirim."
+      ? `Provider ${provider.label} diblokir atau cap token Payung AI Studio telah tercapai. Tidak ada permintaan provider yang dikirim.`
       : "Sisa cap token Payung AI Studio tidak cukup untuk permintaan ini. Tidak ada permintaan provider yang dikirim.";
     return reply({ error, credit_refunded: refunded }, 429, origin);
   }
@@ -431,61 +492,107 @@ async function generate(request, env) {
     const attempt = await attemptProviderChain(providerCandidates, ({ provider: selectedProvider, modelId: selectedModelId }) => {
       const selectedApiKey = env[selectedProvider.apiKeyEnv];
       if (typeof selectedApiKey !== "string" || !selectedApiKey.trim()) throw new Error("provider-key-not-configured");
-      if (selectedProvider.adapter !== "openai-chat-completions") throw new Error("provider-adapter-not-configured");
-      return fetch(selectedProvider.baseUrl + "/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": "Bearer " + selectedApiKey,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: selectedModelId,
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: MAX_COMPLETION_TOKENS
-        }),
-        signal: providerAbort.signal
-      });
+      if (selectedProvider.adapter === "openai-chat-completions") {
+        return fetch(selectedProvider.baseUrl + "/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + selectedApiKey,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: selectedModelId,
+            messages: [{ role: "user", content: prompt }],
+            max_tokens: MAX_COMPLETION_TOKENS
+          }),
+          signal: providerAbort.signal
+        });
+      }
+      if (selectedProvider.adapter === "google-generate-content") {
+        const normalizedModelId = selectedModelId.replace(/^models\//, "");
+        if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(normalizedModelId)) {
+          throw new Error("invalid-gemini-model-id");
+        }
+        return fetch(selectedProvider.baseUrl + "/models/" + encodeURIComponent(normalizedModelId) + ":generateContent", {
+          method: "POST",
+          headers: {
+            "x-goog-api-key": selectedApiKey,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: MAX_COMPLETION_TOKENS }
+          }),
+          signal: providerAbort.signal
+        });
+      }
+      throw new Error("provider-adapter-not-configured");
     });
     providerResponse = attempt.response;
     providerUsed = attempt.provider;
     modelUsed = attempt.modelId;
   } catch {
     const timedOut = providerAbort.signal.aborted;
-    const tokenSettlement = await settleProviderTokenBudget(rpcHeaders, tokenBudgetReservationId, null);
+    const tokenSettlement = await settleProviderTokenBudget(
+      rpcHeaders, tokenBudgetReservationId, null, null, providerUsed.id
+    );
     const refunded = await refundReservation();
     const error = timedOut
       ? (refunded ? "Provider melewati batas waktu. Kredit internal telah dikembalikan." : "Provider melewati batas waktu dan refund belum terkonfirmasi. Hubungi administrator.")
       : (refunded ? "Tidak dapat menghubungi provider. Kredit internal telah dikembalikan." : "Provider tidak dapat dihubungi dan refund belum terkonfirmasi. Hubungi administrator.");
-    return reply({ error, token_budget_finalized: tokenSettlement.ok }, 502, origin);
+    return reply({
+      error,
+      token_budget_finalized: tokenSettlement.ok,
+      ...(tokenSettlement.ok ? {} : {
+        warning: "Pencatatan token gagal; reservasi maksimum tetap dihitung. Jangan ulangi permintaan sebelum administrator meninjau reservasi ini."
+      })
+    }, 502, origin);
   } finally {
     clearTimeout(providerTimeout);
   }
 
   const providerData = await providerResponse.json().catch(() => ({}));
-  const usageTokens = reportedTokenUsage(providerData);
+  const usageTokens = reportedTokenUsage(providerData, providerUsed);
   const forceBlockReason = providerLimitBlockReason(providerResponse.status, providerData);
   const tokenSettlement = await settleProviderTokenBudget(
-    rpcHeaders, tokenBudgetReservationId, usageTokens, forceBlockReason
+    rpcHeaders, tokenBudgetReservationId, usageTokens, forceBlockReason, providerUsed.id
   );
-  if (!providerResponse.ok) {
+  const providerBlock = forceBlockReason === null
+    ? { ok: false, data: null }
+    : (tokenSettlement.ok && tokenSettlement.data?.blocked === true
+      ? { ok: true, data: tokenSettlement.data }
+      : await blockProviderTokenBudget(rpcHeaders, providerUsed.id, forceBlockReason));
+  if (!providerResponse.ok || forceBlockReason !== null) {
     const refunded = await refundReservation();
-    const message = String(providerData?.error?.message || providerData?.message || "Provider gagal memproses permintaan.").slice(0, 500);
+    const message = safeProviderErrorMessage(providerResponse.status, forceBlockReason);
+    const warnings = [];
+    if (!tokenSettlement.ok) {
+      warnings.push("Pencatatan token belum selesai; reservasi maksimum tetap dihitung dan perlu ditinjau administrator.");
+    }
+    if (forceBlockReason !== null && !providerBlock.ok) {
+      warnings.push("Blokir provider belum terkonfirmasi. Jangan aktifkan provider lagi sampai administrator memeriksa Supabase.");
+    }
     return reply({
       error: message,
       provider_status: providerResponse.status,
-      provider_blocked: forceBlockReason !== null,
+      provider_blocked: forceBlockReason !== null && providerBlock.ok,
       token_budget_finalized: tokenSettlement.ok,
-      credit_refunded: refunded
+      credit_refunded: refunded,
+      ...(warnings.length ? { warning: warnings.join(" ") } : {})
     }, 502, origin);
   }
 
-  const output = extractOpenAIChatText(providerData);
+  const output = providerUsed.adapter === "google-generate-content"
+    ? extractGeminiText(providerData)
+    : extractOpenAIChatText(providerData);
   if (!output) {
     const refunded = await refundReservation();
     return reply({
       error: "Provider tidak menghasilkan teks.",
       token_budget_finalized: tokenSettlement.ok,
-      credit_refunded: refunded
+      credit_refunded: refunded,
+      ...(tokenSettlement.ok ? {} : {
+        warning: "Pencatatan token gagal; reservasi maksimum tetap dihitung. Jangan ulangi permintaan sebelum administrator meninjau reservasi ini."
+      })
     }, 502, origin);
   }
 
