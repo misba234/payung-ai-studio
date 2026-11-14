@@ -11,40 +11,36 @@ Creative workspace untuk membuat storyboard iklan, prompt video, ide konten soci
 - Content Vault, kalender, dan metrik performa manual dapat disinkronkan ke workspace Supabase saat login.
 - Foto referensi produk hanya dipratinjau lokal. Jangan masukkan password atau data rahasia ke prompt.
 
-## Status perubahan provider
+## Status provider dan rilis
 
-Worker multi-provider CodeCraft sudah live pada Cloudflare version 37; migrasi provider dan cap token sudah diterapkan, dan key/admin email tersimpan hanya sebagai Worker Secrets. Rilis frontend ini menerbitkan panel admin provider dan warning hasil ke GitHub Pages. Gemini tetap nonaktif; tidak ada rotasi key atau provider alternatif.
+Cloudflare Worker `payung-ai-studio` versi **42** sudah aktif untuk 100% trafik; endpoint health merespons HTTP 200. Frontend GitHub Pages dari branch `main` juga merespons HTTP 200. CodeCraft tetap menjadi provider default dengan model `deepseek-v4-flash-0731`. Google Gemini tersedia sebagai pilihan opsional untuk admin melalui provider selector, dengan model `gemini-3.8-flash`; pemilihan Gemini tidak mengubah default CodeCraft.
 
-Desainnya memakai pengaturan provider/model global yang hanya dapat dibaca/diubah oleh akun admin terverifikasi melalui Worker. Browser hanya mengirim nama provider dan model ID; tidak ada kolom untuk API key. Worker mengambil API key dari Cloudflare Worker Secrets dan tidak pernah mengembalikan nilainya. API key tidak boleh disimpan di HTML, Git, Supabase table, atau browser storage.
+Kunci CodeCraft dan Gemini hanya disimpan sebagai Cloudflare Worker Secrets (`CODECRAFT_API_KEY` dan `GEMINI_API_KEY`). Nilainya tidak ada di source code, frontend, Git, respons admin, maupun database pengaturan provider. Panel admin hanya dapat dibaca/diubah oleh akun yang telah terverifikasi terhadap Worker Secret `PAYUNG_ADMIN_EMAIL`.
 
-Konfigurasi aktif disimpan pada tabel `public.ai_provider_settings`; akses tabel dicabut dari `anon` dan `authenticated`, dan hanya Worker `service_role` yang mengaksesnya. Panel admin tampil hanya jika endpoint Worker memverifikasi email login terhadap Worker Secret `PAYUNG_ADMIN_EMAIL`. Provider yang dapat dipilih harus terdaftar secara eksplisit di `worker.js`; base URL tidak dapat dikirim dari browser. Untuk menambah provider resmi berikutnya, tambahkan adapter/endpoint yang diizinkan, secret binding khusus, dan validasi modelnya—jangan mengizinkan URL arbitrer.
+Gemini diverifikasi hanya lewat request katalog non-generatif `GET /v1beta/models` (HTTP 200; katalog menampilkan `gemini-3.8-flash`). Tidak ada request generasi ke Gemini atau CodeCraft untuk menguji rilis ini, dan tidak ada token model yang dihabiskan oleh proses publikasi.
 
-Untuk CodeCraft, dokumentasi publik menyebut base URL `https://codecraftapi.com/v1`, autentikasi `Authorization: Bearer …`, dan endpoint Chat Completions `POST /chat/completions`; model ID dikirim dalam body. Lihat [Getting Started](https://codecraftapi.com/docs/getting-started) dan [model catalog](https://codecraftapi.com/models). Model awal `deepseek-v4-flash-0731` diisi pada migrasi dari katalog model; aplikasi tidak memanggil daftar model saat halaman dibuka. Secret yang diperlukan adalah `CODECRAFT_API_KEY` dan `PAYUNG_ADMIN_EMAIL`, di samping `SUPABASE_SERVICE_ROLE_KEY`. Nilainya hanya dipasang lewat secret manager Cloudflare.
+## Keamanan provider dan batas token
 
-Worker tidak melakukan retry atau rotasi key. Untuk semua provider request, termasuk error jaringan/timeout yang ambigu, ia tidak mengirim request kedua. Bila transport tepercaya suatu saat membuktikan request belum terkirim, failover tetap nonaktif sampai provider lain diotorisasi; saat ini registri hanya memiliki CodeCraft.
+Pengaturan provider/model global disimpan pada `public.ai_provider_settings`; tabel tersebut tidak menyimpan API key. Browser hanya mengirim provider dan model ID yang diizinkan. Base URL ditetapkan di Worker dan tidak dapat dikirim dari browser. Untuk menambah provider lain, tambahkan adapter, endpoint resmi, secret binding, dan validasi model secara eksplisit.
 
-Cap Payung adalah kumulatif **500.000 token** dan tidak direset otomatis. Worker mereservasi batas konservatif sebelum menghubungi provider (byte UTF-8 prompt + maksimum 6.000 token output + margin 8.192), lalu mencatat `usage.total_tokens` jika provider mengembalikannya; bila tidak ada usage atau hasil request ambigu, seluruh reservasi tetap dihitung. Permintaan baru ditolak jika reservasi tidak muat, cap habis, reservasi terlampaui, atau CodeCraft memberi sinyal kuota/saldo/billing/rate-limit. Cap ini hanya menghitung pemakaian yang melalui Payung; saldo dan allowance CodeCraft, termasuk pemakaian di luar Payung, tidak dibaca atau diverifikasi. Payung tidak mengatur top-up provider.
+Setiap provider memiliki cap Payung **kumulatif 500.000 token** yang terpisah di `public.ai_provider_token_budget`; cap tidak direset otomatis. Worker mereservasi budget secara atomik sebelum menghubungi provider, dengan estimasi konservatif berupa byte UTF-8 prompt, maksimum 6.000 token output, dan margin 8.192. Pemakaian aktual diselesaikan dari laporan token provider. Jika laporan token tidak tersedia atau settlement ambigu, reservasi tetap dihitung agar cap tidak terlampaui. Reservasi serentak diserialisasi per provider.
 
-Gunakan hanya key yang memang berhak dipakai dan sesuai ketentuan masing-masing layanan. CodeCraft menampilkan paket Basic mulai $3.50/bulan di [halaman harga](https://codecraftapi.com/pricing); halaman publik tersebut tidak menunjukkan allowance yang tersisa di akun. Pemilik proyek menyatakan menggunakan allowance gratis dan memiliki izin tertulis CodeCraft untuk pemakaian publik. Kebijakan CodeCraft melarang pembuatan banyak akun untuk mengumpulkan free allowance serta berbagi/menjual akses API tanpa izin sesuai [Acceptable Use Policy](https://codecraftapi.com/acceptable-use).
+Cap hanya menghitung pemakaian yang melewati Payung; saldo dan free allowance provider, termasuk pemakaian di luar Payung, tidak dibaca atau diverifikasi. Provider yang menolak karena kredensial, kuota/saldo, billing, atau rate limit dihentikan—tidak ada perpindahan otomatis ke provider berbayar, rotasi key, ataupun top-up otomatis. Batas rate Gemini memblokir jalur Gemini setidaknya 24 jam; cooldown itu tidak mengatur ulang cap token kumulatif. Failover antar-provider saat ini tidak dikonfigurasi.
+
+Untuk CodeCraft, dokumentasi publik menyebut base URL `https://codecraftapi.com/v1`, autentikasi `Authorization: Bearer …`, dan endpoint Chat Completions `POST /chat/completions`; model ID dikirim dalam body. Lihat [Getting Started](https://codecraftapi.com/docs/getting-started) dan [model catalog](https://codecraftapi.com/models). Cap Payung tidak membuktikan allowance atau saldo di akun CodeCraft. Pemilik proyek menyatakan menggunakan allowance gratis dan memiliki izin tertulis CodeCraft untuk pemakaian publik; aplikasi tidak mengatur top-up. Ikuti [Acceptable Use Policy](https://codecraftapi.com/acceptable-use), yang melarang pembuatan banyak akun untuk mengumpulkan free allowance serta berbagi/menjual akses API tanpa izin.
 
 ## Arsitektur hosting
 
 Frontend dan API dipublikasikan terpisah:
 
-1. **Frontend:** GitHub Pages dari branch `main`, root `/`. URL saat ini: <https://misba234.github.io/payung-ai-studio/>.
-2. **API:** Cloudflare Worker `payung-ai-studio`, dengan endpoint `/generate` dan `/health`. Pengaturan admin lokal menggunakan `/admin/provider-settings`. `wrangler.jsonc` hanya mengonfigurasi Worker API dan tidak mengikat aset statis; menjalankan `wrangler deploy` saja **tidak** menerbitkan halaman HTML.
+1. **Frontend:** GitHub Pages dari branch `main`, root `/`. URL: <https://misba234.github.io/payung-ai-studio/>.
+2. **API:** Cloudflare Worker `payung-ai-studio`, dengan endpoint `/generate` dan `/health`. Pengaturan admin menggunakan `/admin/provider-settings`. `wrangler.jsonc` mengonfigurasi Worker API, bukan aset statis; menjalankan `wrangler deploy` saja **tidak** menerbitkan halaman HTML.
 
 `index.html` dan `public/index.html` harus identik; setiap perubahan UI perlu disalin ke keduanya. Redirect email Supabase dan `ALLOWED_ORIGINS` di `worker.js` harus cocok dengan domain frontend.
 
-## Persyaratan backend dan urutan rilis
+## Persyaratan backend dan pengembangan
 
-Supabase Auth, tabel `ai_credits`/`user_workspace`, dan RPC `refund_ai_credit` serta `finalize_ai_credit` tetap diperlukan. AI Cloud meminta login dan kredit akun; Guest hanya dapat menggunakan fitur lokal. Tabel provider/token baru sudah diverifikasi privat, tetapi kebijakan RLS/ownership workspace yang sudah ada tidak diaudit ulang secara menyeluruh dalam rilis ini.
-
-Perlindungan reservasi kredit ganda memakai migrasi `migrations/20261114_ai_credit_idempotency.sql`; migrasi ini sudah live sejak rilis anti-duplikasi sebelumnya. `migrations/20261114_ai_provider_settings.sql` dan `migrations/20261114_ai_provider_token_cap.sql` juga sudah diterapkan. Tabel pengaturan provider tidak menyimpan key; tabel quota dan fungsi reservasi/settlement tidak dapat diakses langsung oleh `anon`/`authenticated`, dan RPC hanya dapat dipanggil oleh `service_role`.
-
-Deploy Worker dilakukan setelah migrasi dan pemasangan secret; commit rilis ini menerbitkan panel admin/warning ke `main`. Tidak ada request generasi atau uji model yang dilakukan; tes lokal memakai mock. Belum diverifikasi bahwa key diterima oleh endpoint generasi CodeCraft.
-
-## Pengembangan dan tes lokal
+Supabase Auth, tabel `ai_credits`/`user_workspace`, dan RPC `refund_ai_credit` serta `finalize_ai_credit` tetap diperlukan. AI cloud meminta login dan kredit akun; Guest hanya dapat menggunakan fitur lokal. Migrasi `20261114_ai_credit_idempotency.sql`, pengaturan provider, cap token, dan budget Gemini sudah diterapkan. Kebijakan RLS/ownership workspace yang lebih lama tidak diaudit ulang secara menyeluruh dalam rilis ini.
 
 Jalankan server statis dari root repo:
 
@@ -52,17 +48,17 @@ Jalankan server statis dari root repo:
 python3 -m http.server 8000
 ```
 
-Buka <http://localhost:8000>. Fitur lokal dapat diuji di sana; login dan AI cloud memerlukan konfigurasi Supabase/Worker dan origin lokal yang diizinkan.
+Buka <http://localhost:8000>. Login dan AI cloud memerlukan konfigurasi Supabase/Worker dan origin lokal yang diizinkan.
 
-Tes adapter/provider dan endpoint admin yang disiapkan dapat dijalankan dengan:
+Tes provider dan endpoint admin:
 
 ```sh
 node tests/provider-settings.test.mjs
 node tests/provider-failover.test.mjs
 ```
 
-Tes tersebut memakai mock lokal dan tidak memanggil Supabase live, CodeCraft, maupun Gemini. Suite failover mencakup sinyal pre-send tersertifikasi, error jaringan ambigu, timeout/abort, seluruh kelas HTTP response, kuota/billing, rotasi key/provider terlarang, serta batas satu alternate. Pemeriksaan sintaks Worker dan JavaScript inline HTML dapat dilakukan dengan Node.js. Uji UI manual di desktop/perangkat seluler tidak dilakukan dalam rilis ini; periksa responsivitas setelah publikasi jika diperlukan.
+Tes memakai mock lokal dan tidak memanggil Supabase live, CodeCraft, maupun Gemini. Suite memeriksa reservasi/settlement budget, cap keras, provider settings, serta kebijakan failover konservatif. Uji UI manual di desktop/perangkat seluler tidak dilakukan pada rilis ini.
 
-## Catatan rilis
+## Catatan batasan
 
-Belum ada CI, rate-limit per pengguna/IP yang menyeluruh, panduan rollback, atau audit lengkap RLS. Cap 500.000 token membatasi pemakaian melalui Payung, bukan pemakaian key di luar situs, dan tidak memantau saldo/allowance CodeCraft. Aplikasi tidak mengatur top-up; status billing provider belum diverifikasi. Generasi langsung belum diuji agar tidak memakai token.
+Cap 500.000 token berlaku untuk penggunaan melalui Payung, bukan untuk penggunaan API key di luar situs. Tidak ada pemantauan saldo/allowance CodeCraft atau pengaturan billing provider. Belum ada CI, rate-limit menyeluruh per pengguna/IP, panduan rollback formal, atau audit RLS penuh. Uji generasi langsung sengaja tidak dilakukan agar tidak memakai token.
