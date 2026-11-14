@@ -61,7 +61,7 @@ node tests/provider-settings.test.mjs
 node tests/provider-failover.test.mjs
 ```
 
-Tes tersebut memakai mock lokal dan tidak memanggil Supabase live, CodeCraft, maupun Gemini. Suite failover mencakup sinyal pre-send tersertifikasi, error jaringan ambigu, timeout/abort, seluruh kelas HTTP response, kuota/billing, rotasi key/provider terlarang, serta batas satu alternate. Pemeriksaan sintaks Worker dan JavaScript inline HTML dapat dilakukan dengan Node.js. Uji UI pada desktop dan perangkat seluler sebelum publikasi.
+Tes tersebut memakai mock lokal dan tidak memanggil Supabase live, CodeCraft, maupun Gemini. Suite failover mencakup sinyal pre-send tersertifikasi, error jaringan ambigu, timeout/abort, seluruh kelas HTTP response, kuota/billing, rotasi key/provider terlarang, serta batas satu alternate. Pemeriksaan sintaks Worker dan JavaScript inline HTML dapat dilakukan dengan Node.js. Uji UI manual di desktop/perangkat seluler tidak dilakukan dalam rilis ini; periksa responsivitas setelah publikasi jika diperlukan.
 
 ## Catatan rilis
 
