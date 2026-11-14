@@ -26,11 +26,12 @@ Frontend dan API dipublikasikan terpisah:
 Sebelum mengaktifkan fitur akun/Gemini di lingkungan produksi, administrator perlu memverifikasi konfigurasi proyek Supabase yang digunakan aplikasi:
 
 - Supabase Auth dengan URL redirect yang mengizinkan URL frontend.
-- Tabel `ai_credits` dan `user_workspace`, kebijakan RLS/ownership, serta RPC `consume_ai_credit`, `refund_ai_credit`, dan `finalize_ai_credit`. Definisi SQL/migrasi belum disertakan dalam repositori ini; audit skema dan kebijakannya wajib dilakukan di proyek Supabase.
+- Tabel `ai_credits` dan `user_workspace`, kebijakan RLS/ownership, serta RPC `refund_ai_credit` dan `finalize_ai_credit`. Audit skema dan kebijakannya tetap wajib dilakukan di proyek Supabase.
+- Perlindungan reservasi ganda menggunakan migrasi `migrations/20261114_ai_credit_idempotency.sql`: migrasi menambah kunci idempotensi per user, indeks unik, dan RPC `consume_ai_credit_idempotent`. Migrasi ini **tidak dijalankan otomatis**; terapkan terlebih dahulu sebelum Worker versi baru. Ia mencabut jalur RPC `consume_ai_credit` lama agar request tanpa kunci gagal tertutup; sampai Worker baru aktif, AI dapat sementara gagal dengan aman.
 - Secret Cloudflare Worker `GEMINI_API_KEY` dan `SUPABASE_SERVICE_ROLE_KEY`. Masukkan melalui secret manager/CLI Cloudflare; jangan menulis nilainya ke file, HTML, Git, atau log.
 - Uji lengkap setelah konfigurasi: login, pembacaan saldo, sinkronisasi workspace, satu permintaan Gemini, serta alur refund/finalisasi kredit.
 
-Worker mengembalikan `503` untuk fitur AI jika `GEMINI_API_KEY` belum tersedia. Secret `SUPABASE_SERVICE_ROLE_KEY` juga diperlukan untuk operasi kredit, tetapi keberadaannya tidak dapat diverifikasi dari file publik.
+Worker mengembalikan `503` untuk fitur AI jika `GEMINI_API_KEY` belum tersedia. Secret `SUPABASE_SERVICE_ROLE_KEY` juga diperlukan untuk operasi kredit, tetapi keberadaannya tidak dapat diverifikasi dari file publik. Untuk merilis anti-duplikasi, urutannya: terapkan migrasi SQL, deploy Worker baru, lalu terbitkan frontend; jangan deploy Worker sebelum RPC idempoten tersedia.
 
 ## Pengembangan lokal
 

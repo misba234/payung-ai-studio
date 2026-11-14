@@ -862,18 +862,31 @@ $("authSignUp").addEventListener("click",async()=>{
  else payungStatus("Pendaftaran diterima. Buka email verifikasi terbaru dari Payung AI Studio. Setelah menekan tombol konfirmasi, Anda akan diarahkan kembali ke website ini. Jika tautan lama mengarah ke alamat yang salah, minta email verifikasi baru.");
 });
 $("authSignOut").addEventListener("click",async()=>{if(!payungSupabase)return;const synced=await payungFlushWorkspace();if(!synced)payungStatus("Workspace belum tersinkron; salinan lokal akun tetap tersimpan di perangkat ini.");const {error}=await payungSupabase.auth.signOut();if(error){payungStatus("Gagal keluar: "+error.message);return}await payungRefreshAccount()});
+let payungAiRequestInFlight=false;
+function payungCreateAIRequestId(){
+ const cryptoApi=globalThis.crypto;
+ if(cryptoApi?.randomUUID)return cryptoApi.randomUUID();
+ const bytes=new Uint8Array(16);
+ if(cryptoApi?.getRandomValues)cryptoApi.getRandomValues(bytes);else for(let i=0;i<bytes.length;i++)bytes[i]=Math.floor(Math.random()*256);
+ bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+ const hex=Array.from(bytes,value=>value.toString(16).padStart(2,"0")).join("");
+ return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+}
 async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
- if(!payungSessionVerified||payungSessionLocked){toast("Sesi belum terverifikasi. Coba lagi setelah koneksi pulih.");return null}
- if(!payungSupabase){toast("Autentikasi belum siap.");return null}
- let session=null;
- try{const result=await payungSupabase.auth.getSession();session=result?.data?.session||null;}
- catch(error){payungRequestSessionRefresh();toast("Sesi belum dapat diverifikasi. Coba lagi setelah koneksi pulih.");return null;}
- const currentUserId=payungSession?.user?.id||null,sessionUserId=session?.user?.id||null;
- if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null;}
- if(!payungSessionVerified||payungSessionLocked||!currentUserId||sessionUserId!==currentUserId){payungRequestSessionRefresh();toast("Sesi akun berubah. Periksa status login lalu coba lagi.");return null;}
- const button=$(buttonId);const originalLabel=button?.textContent||"";if(button){button.disabled=true;button.textContent="Gemini sedang memproses...";}
+ if(payungAiRequestInFlight){toast("Permintaan AI lain sedang diproses. Tunggu hingga selesai.");return null}
+ payungAiRequestInFlight=true;
+ const button=$(buttonId);const originalLabel=button?.textContent||"";
+ if(button){button.disabled=true;button.textContent="Gemini sedang memproses...";}
  try{
-  const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token},body:JSON.stringify({action,prompt})});
+  if(!payungSessionVerified||payungSessionLocked){toast("Sesi belum terverifikasi. Coba lagi setelah koneksi pulih.");return null}
+  if(!payungSupabase){toast("Autentikasi belum siap.");return null}
+  const idempotencyKey=payungCreateAIRequestId();let session=null;
+  try{const result=await payungSupabase.auth.getSession();session=result?.data?.session||null;}
+  catch(error){payungRequestSessionRefresh();toast("Sesi belum dapat diverifikasi. Coba lagi setelah koneksi pulih.");return null;}
+  const currentUserId=payungSession?.user?.id||null,sessionUserId=session?.user?.id||null;
+  if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan Gemini AI.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null;}
+  if(!payungSessionVerified||payungSessionLocked||!currentUserId||sessionUserId!==currentUserId){payungRequestSessionRefresh();toast("Sesi akun berubah. Periksa status login lalu coba lagi.");return null;}
+  const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"Idempotency-Key":idempotencyKey},body:JSON.stringify({action,prompt})});
   const data=await response.json();let activeSession=null;
   try{const result=await payungSupabase.auth.getSession();activeSession=result?.data?.session||null;}
   catch(error){payungRequestSessionRefresh();return null;}
@@ -884,7 +897,7 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
   $("authAiLabel").textContent="Aktif";
   return data.output;
  }catch(error){toast(error.message);return null}
- finally{if(button){button.disabled=false;button.textContent=originalLabel}}
+ finally{payungAiRequestInFlight=false;if(button){button.disabled=false;button.textContent=originalLabel}}
 }
 $("generateAIStoryboard").addEventListener("click",async()=>{
  const product=$("productName").value.trim();if(!product){toast("Isi nama produk pada brief cinematic terlebih dahulu.");return}

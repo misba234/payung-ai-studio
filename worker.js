@@ -3,12 +3,13 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3T4cxk_Yxvke5vsZU_g2pA_VlNO8gjD
 const ALLOWED_ORIGINS = new Set(["https://misba234.github.io", "https://payung-ai-studio.misbaahmed17.workers.dev"]);
 const GEMINI_MODEL = "gemini-3.8-flash";
 const ALLOWED_ACTIONS = new Set(["social-content", "storyboard", "calendar"]);
+const IDEMPOTENCY_KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function corsHeaders(origin) {
   return {
     "Access-Control-Allow-Origin": ALLOWED_ORIGINS.has(origin) ? origin : "https://misba234.github.io",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, Idempotency-Key",
     "Vary": "Origin"
   };
 }
@@ -39,6 +40,8 @@ async function generate(request, env) {
   const prompt = String(body.prompt || "").trim();
   if (!ALLOWED_ACTIONS.has(action)) return reply({ error: "Jenis generator tidak dikenal." }, 400, origin);
   if (!prompt || prompt.length > 12000) return reply({ error: "Prompt kosong atau terlalu panjang." }, 400, origin);
+  const idempotencyKey = request.headers.get("Idempotency-Key") || "";
+  if (!IDEMPOTENCY_KEY_RE.test(idempotencyKey)) return reply({ error: "Kunci idempotensi tidak valid. Muat ulang halaman lalu coba lagi." }, 400, origin);
 
   const token = authorization.slice(7);
   let authResponse;
@@ -65,9 +68,9 @@ async function generate(request, env) {
   };
   let reserveResponse;
   try {
-    reserveResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_ai_credit", {
+    reserveResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_ai_credit_idempotent", {
       method: "POST", headers: rpcHeaders,
-      body: JSON.stringify({ p_user_id: user.id, p_action: action, p_model: GEMINI_MODEL })
+      body: JSON.stringify({ p_user_id: user.id, p_action: action, p_model: GEMINI_MODEL, p_idempotency_key: idempotencyKey })
     });
   } catch {
     return reply({ error: "Tidak dapat mengamankan kredit. Permintaan dibatalkan sebelum memanggil Gemini." }, 502, origin);
@@ -83,6 +86,9 @@ async function generate(request, env) {
   const reservationId = Number(reservation?.reservation_id);
   if (!Number.isSafeInteger(reservationId) || reservationId <= 0) {
     return reply({ error: "Respons reservasi kredit tidak valid. Hubungi administrator." }, 502, origin);
+  }
+  if (reservation?.duplicate === true) {
+    return reply({ error: "Permintaan ini sudah diterima sebelumnya. Tidak ada kredit tambahan yang dipotong atau permintaan AI kedua yang dikirim.", duplicate: true, reservation_id: reservationId, status: String(reservation.status || "unknown"), credits_remaining: reservation.credits_remaining == null ? null : Number(reservation.credits_remaining) }, 409, origin);
   }
 
   async function refundReservation() {
