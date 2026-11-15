@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#10131d">
-<meta name="description" content="Payung AI Studio — workspace pembuatan konten, storyboard cinematic, kalender, dan penyimpanan cloud dengan AI Cloud.">
-<title>Payung AI Studio 3.1 — AI Content & Cinematic Production</title>
+<meta name="description" content="Payung AI Studio membantu kreator membuat storyboard iklan dan konten produk, dengan draft lokal atau AI Cloud.">
+<title>Payung AI Studio — Konten & Storyboard</title>
 <style>
 :root{
   --bg:#0b0e16;--panel:#121725;--panel2:#171e2e;--line:#293247;--text:#f3f5fb;
@@ -156,36 +156,97 @@ button,.btn{max-width:100%;white-space:normal}
  .module-actions .btn{width:100%}
 }
 
+
+/* Payung simplified workspace — consistent reusable UI patterns */
+:root{--bg:#0b0d14;--panel:#111622;--panel2:#171d2a;--line:#293244;--text:#f4f6fb;--muted:#a4aec0;--accent:#a78bfa;--accent2:#6ee7d8;--shadow:0 8px 26px rgba(0,0,0,.16);--radius:16px;color-scheme:dark}
+body{background:var(--bg)}
+header{background:rgba(11,13,20,.94)}
+.hero{grid-template-columns:1fr;padding:42px 0 24px;gap:0}
+.hero>div{max-width:780px}
+.hero h1{font-size:clamp(36px,5.5vw,58px);letter-spacing:-2px}
+.hero p{max-width:690px}
+.hero-art{display:none}
+.navlinks{gap:5px;align-items:center}
+.navlinks a{padding:8px 10px;border-radius:9px;white-space:nowrap}
+.navlinks a:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.btn{transition:background-color .15s,border-color .15s,filter .15s;text-decoration:none}
+.btn:hover{transform:none;filter:brightness(1.07)}
+.panel,.module-card,.scene,.full-prompt,.lib-card{box-shadow:none}
+.section-head{margin-top:20px}
+.module{scroll-margin-top:84px}
+.feature-disclosure{display:block;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:0;overflow:hidden}
+.feature-summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:17px 18px;gap:2px 14px}
+.feature-summary::-webkit-details-marker,.advanced-settings>summary::-webkit-details-marker,.tool-disclosure>summary::-webkit-details-marker{display:none}
+.feature-summary .eyebrow,.feature-summary strong,.feature-summary small{grid-column:1;min-width:0}
+.feature-summary .eyebrow{font-size:10px;letter-spacing:1.4px}
+.feature-summary strong{font-size:16px;line-height:1.35}
+.feature-summary small{color:var(--muted);font-size:12px;line-height:1.45}
+.feature-summary:after{content:"+";grid-column:2;grid-row:1/4;color:var(--accent2);font-size:23px;font-weight:400}
+.feature-disclosure[open]>.feature-summary:after{content:"−"}
+.feature-disclosure[open]>.feature-summary{border-bottom:1px solid var(--line)}
+.feature-disclosure-body{padding:16px 18px 18px}
+.feature-disclosure-body>.module-card{margin-top:0}
+.account-disclosure{margin:8px 0 20px}
+.account-summary{padding:13px 16px}
+.account-disclosure-body{padding:0 16px 16px}
+.account-disclosure-body>.module-card{background:transparent;border:0;padding:8px 0 4px}
+.advanced-settings{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02);margin:4px 0 20px}
+.advanced-settings>summary,.tool-disclosure>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;font-size:13px;font-weight:800}
+.advanced-settings>summary small,.tool-disclosure>summary small{color:var(--muted);font-size:11px;font-weight:500;text-align:right}
+.advanced-settings>summary:after,.tool-disclosure>summary:after{content:"+";color:var(--accent2);font-size:20px;line-height:1}
+.advanced-settings[open]>summary:after,.tool-disclosure[open]>summary:after{content:"−"}
+.advanced-settings[open]>summary,.tool-disclosure[open]>summary{border-bottom:1px solid var(--line)}
+.advanced-settings-body{padding:15px}
+.advanced-settings-body .form-section{margin-bottom:17px;padding-bottom:17px}
+.tool-disclosure{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.tool-disclosure-body{padding-top:10px}
+.tool-disclosure .btn{margin-top:8px}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+#generator,#results,#content-engine,#calendar,#vault,#library,#account{scroll-margin-top:86px}
+@media(max-width:700px){
+ .nav{height:auto;min-height:62px;flex-wrap:wrap;padding:8px 0;gap:8px}
+ .navlinks{display:flex;width:100%;order:3;overflow-x:auto;justify-content:flex-start;gap:3px;padding:1px 0 3px;scrollbar-width:none}
+ .navlinks::-webkit-scrollbar{display:none}
+ .navlinks a{font-size:12px;padding:7px 9px}
+ .hero{padding:30px 0 18px}
+ .hero-actions .btn{flex:1 1 auto}
+ .feature-summary{padding:14px}
+ .feature-disclosure-body,.account-disclosure-body{padding:12px}
+ .advanced-settings-body{padding:12px}
+ .advanced-settings>summary,.tool-disclosure>summary{align-items:flex-start}
+ .advanced-settings>summary small,.tool-disclosure>summary small{margin-left:auto}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
 </style>
 </head>
 <body>
 <header>
  <div class="container nav">
-  <a class="brand" href="#">
-   <span class="logo">✦</span><span>PAYUNG AI STUDIO<small>AI CONTENT & CINEMATIC PRODUCTION</small></span>
+  <a class="brand" href="#top" aria-label="Payung AI Studio, beranda">
+   <span class="logo" aria-hidden="true">✦</span><span>PAYUNG AI STUDIO<small>CONTENT STUDIO</small></span>
   </a>
-  <nav class="navlinks"><a href="#content-engine">Content Engine</a><a href="#calendar">Kalender</a><a href="#vault">Vault</a><a href="#generator">Cinematic</a><a href="#library">99 Techniques</a></nav>
-  <span class="pill">PUBLIC · FREE</span>
+  <nav class="navlinks" aria-label="Navigasi utama">
+   <a href="#generator">Buat</a><a href="#content-engine">Konten sosial</a><a href="#calendar">Kalender</a><a href="#vault">Vault</a><a href="#library">Teknik</a>
+  </nav>
+  <span class="pill">DRAFT LOKAL</span>
  </div>
 </header>
 <main class="container">
- <section class="hero">
+ <section class="hero" id="top">
   <div>
-   <div class="eyebrow">AI CONTENT & CINEMATIC WORKSPACE</div>
-   <h1>One product. More ideas.<br><span class="gradient">Better content.</span></h1>
-   <p>Ubah detail produk menjadi ide konten, hook, script, caption, kalender posting, storyboard, dan prompt video cinematic.</p>
-   <div class="hero-actions"><a class="btn primary" href="#generator">✦ Mulai bikin konten</a><a class="btn secondary" href="#library">Lihat content studio ↗</a></div>
-  </div>
-  <div class="hero-art">
-   <div class="art-top"><span class="pill">CREATIVE ENGINE 01</span><span style="color:var(--gold)">● LIVE WORKSPACE</span></div>
-   <div><div class="art-title">IDEA → FRAME → <span>IMPACT.</span></div><div class="art-grid"><div>🎬</div><div>📷</div><div>✨</div></div></div>
-   <div class="art-bottom"><span>STORYBOARD GENERATOR</span><span>PAYUNG AI STUDIO ©</span></div>
+   <div class="eyebrow">WORKSPACE KREATOR</div>
+   <h1>Buat konten produk<br><span class="gradient">tanpa mulai dari nol.</span></h1>
+   <p>Tulis brief sekali untuk menyusun storyboard iklan, ide konten sosial, dan rencana posting. Mulai dengan draft lokal; AI Cloud tersedia setelah login.</p>
+   <div class="hero-actions"><a class="btn primary" href="#generator">Mulai membuat storyboard</a><a class="btn secondary" href="#content-engine">Buat konten sosial</a></div>
   </div>
  </section>
 
 
- <section class="module" id="account">
-  <div class="module-head"><div class="eyebrow">ACCOUNT / CLOUD AI</div><h2>Masuk ke Payung AI Studio</h2><p>Login untuk memakai AI Cloud dan menyimpan pemakaian kredit pada akun Anda.</p></div>
+ <details class="module account-disclosure" id="account">
+ <summary class="feature-summary account-summary"><span class="eyebrow">AKUN / AI CLOUD</span><strong>Akun & koneksi</strong><small>Login untuk AI Cloud, kredit, dan sinkronisasi.</small></summary>
+ <div class="account-disclosure-body">
+
   <div class="module-card">
    <div class="grid2">
     <div class="field"><label for="authEmail">Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="nama@email.com"></div>
@@ -206,16 +267,18 @@ button,.btn{max-width:100%;white-space:normal}
    <div class="module-actions"><button class="btn secondary" id="adminProviderReload" type="button">Muat ulang</button><button class="btn primary" id="adminProviderSave" type="button">Simpan provider/model</button></div>
    <p id="adminProviderStatus" class="note" role="status" aria-live="polite"></p>
   </div>
- </section>
+
+ </div>
+</details>
 
  <section id="generator">
-  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2>Bangun iklan cinematic Anda</h2><p>Buat draft lokal tanpa kredit atau gunakan AI Cloud setelah login. Hasil dapat disimpan dan disinkronkan ke akun Anda.</p></div><span class="pill">LOKAL + AI CLOUD</span></div>
+  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2>Bangun iklan cinematic Anda</h2><p>Isi informasi inti. Pengaturan visual lainnya dapat dibuka bila diperlukan.</p></div><span class="pill">LOKAL + AI CLOUD</span></div>
   <div class="workspace">
    <div class="panel form-panel">
     <div class="form-section">
      <h3><span class="step">01</span> Informasi produk</h3>
      <div class="grid2">
-      <div class="field"><label for="productName">Nama produk / brand *</label><input id="productName" placeholder="Contoh: Bawang Hitam Premium"></div>
+      <div class="field"><label for="productName">Nama produk / merek *</label><input id="productName" placeholder="Contoh: Bawang Hitam Premium"></div>
       <div class="field"><label for="category">Kategori produk</label><select id="category"><option>Makanan dan minuman</option><option>Skincare dan kecantikan</option><option>Fashion dan aksesoris</option><option>Elektronik dan gadget</option><option>Produk kesehatan</option><option>Rumah tangga</option><option>Otomotif</option><option>Produk umum</option></select></div>
      </div>
      <div class="field"><label for="description">Deskripsi singkat produk</label><textarea id="description" placeholder="Jelaskan bentuk, bahan, kemasan, karakter, atau keunikan produk..."></textarea></div>
@@ -223,7 +286,7 @@ button,.btn{max-width:100%;white-space:normal}
       <div class="field"><label for="usp">Keunggulan / pesan utama</label><input id="usp" placeholder="Contoh: rasa khas, kemasan praktis"></div>
       <div class="field"><label for="cta">Call to action</label><input id="cta" value="Pesan sekarang"></div>
      </div>
-     <div class="field"><label>Foto referensi produk (opsional)</label><div class="upload">Unggah foto untuk panduan visual saat menyusun prompt.<input id="reference" type="file" accept="image/*"><img id="preview" class="preview" alt="Pratinjau foto produk"></div><span class="hint">Foto hanya dipratinjau secara lokal. Generator tidak mengirim gambar ke server atau Google Flow.</span></div>
+
     </div>
     <div class="form-section">
      <h3><span class="step">02</span> Format video</h3>
@@ -233,6 +296,10 @@ button,.btn{max-width:100%;white-space:normal}
      </div>
      <div class="field"><label for="language">Bahasa prompt</label><select id="language"><option value="English">English (recommended for video models)</option><option value="Indonesia">Bahasa Indonesia</option></select></div>
     </div>
+    <details class="advanced-settings">
+     <summary>Pengaturan lanjutan <small>Gaya, kamera, audio, dan foto referensi</small></summary>
+     <div class="advanced-settings-body">
+     <div class="field"><label for="reference">Foto referensi produk (opsional)</label><div class="upload">Unggah foto untuk panduan visual saat menyusun prompt.<input id="reference" type="file" accept="image/*"><img id="preview" class="preview" alt="Pratinjau foto produk"></div><span class="hint">Foto hanya dipratinjau secara lokal. Tidak dikirim ke server atau provider AI.</span></div>
     <div class="form-section">
      <h3><span class="step">03</span> Arah visual & sinematografi</h3>
      <div class="grid2">
@@ -250,8 +317,10 @@ button,.btn{max-width:100%;white-space:normal}
      </div>
      <div class="field"><label for="extra">Instruksi kreatif tambahan (opsional)</label><textarea id="extra" placeholder="Contoh: tampilkan bahan alami, jangan tampilkan manusia, pertahankan warna kemasan..."></textarea></div>
     </div>
-    <button class="btn primary" id="generate" style="width:100%;padding:15px">✦ Generate storyboard & prompt (Lokal)</button>
-    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">✦ Generate storyboard dengan AI Cloud</button>
+     </div>
+    </details>
+    <button class="btn primary" id="generate" style="width:100%;padding:15px">Buat storyboard lokal</button>
+    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">Buat dengan AI Cloud · perlu login & kredit</button>
     <div id="aiStoryboardOutput" class="content-output" style="margin-top:12px">Storyboard versi AI Cloud akan muncul di sini.</div>
    </div>
    <aside class="panel sidebar">
@@ -262,9 +331,7 @@ button,.btn{max-width:100%;white-space:normal}
     <div class="stat"><span>Output</span><b>Storyboard + prompts</b></div>
     <button class="btn secondary" id="reset">↺ Reset formulir</button>
     <div class="note">Generator menggunakan template dan aturan kreatif lokal. Aplikasi ini menyusun storyboard dan prompt, bukan merender video. Hasil AI dapat berbeda; periksa detail produk dan klaim iklan sebelum dipublikasikan.</div>
-    <div style="margin-top:20px;padding-top:17px;border-top:1px solid rgba(255,255,255,.08)">
-     <h3>Studio tools <span class="pill" style="font-size:9px;vertical-align:middle">3.0 CREATOR SUITE</span></h3>
-     <p class="note" style="margin:5px 0 12px">Pilih konsep cepat atau simpan proyek di perangkat ini.</p>
+    <details class="tool-disclosure"><summary>Template & proyek <small>Simpan, buka, atau pulihkan draft</small></summary><div class="tool-disclosure-body">
      <div class="field"><label for="adTemplate">Template iklan siap pakai</label><select id="adTemplate">
       <option value="">Pilih template kreatif…</option><option value="food">Food & Beverage — appetizing hero</option><option value="beauty">Skincare — clean beauty reveal</option><option value="fashion">Fashion — editorial product film</option><option value="tech">Gadget — futuristic tech launch</option><option value="home">Home & Lifestyle — warm everyday story</option>
      </select></div>
@@ -275,8 +342,8 @@ button,.btn{max-width:100%;white-space:normal}
      <div class="grid2"><button class="btn secondary" id="loadProject" style="margin:0">Muat</button><button class="btn ghost" id="deleteProject" style="margin:0">Hapus</button></div>
      <div class="grid2" style="margin-top:10px"><button class="btn secondary" id="exportBackup" style="margin:0">↓ Backup JSON</button><button class="btn secondary" id="importBackup" style="margin:0">↑ Pulihkan JSON</button></div>
      <input id="backupFile" type="file" accept="application/json,.json" style="display:none">
-     <div class="note">Draft otomatis dan foto referensi disimpan/dipratinjau di browser; foto tidak dikirim. Saat login, Vault, kalender, dan metrik dapat disinkronkan ke Supabase. AI Cloud mengirim prompt teks ke backend/provider. Jangan masukkan data rahasia.</div>
-    </div>
+     <div class="note">Draft tersimpan di browser. Saat memakai AI Cloud, prompt teks dikirim ke server dan provider AI. Jangan masukkan data rahasia.</div>
+    </div></details>
    </aside>
   </div>
  </section>
@@ -290,8 +357,9 @@ button,.btn{max-width:100%;white-space:normal}
  </section>
 
 
- <section class="module" id="content-engine">
-  <div class="module-head"><div class="eyebrow">02 / AI CONTENT ENGINE</div><h2>Satu produk, banyak ide konten.</h2><p>Buat draft cepat secara lokal atau gunakan AI Cloud untuk menghasilkan variasi hook, script, caption, CTA, dan arahan visual yang lebih mendalam.</p></div>
+ <details class="module feature-disclosure" id="content-engine">
+  <summary class="feature-summary"><span class="eyebrow">KONTEN SOSIAL</span><strong>Ide, hook, script, dan caption</strong><small>Isi brief sekali, lalu buat draft lokal atau AI Cloud.</small></summary>
+<div class="feature-disclosure-body">
   <div class="module-grid">
    <div class="module-card">
     <h3>Product brief</h3>
@@ -312,10 +380,11 @@ button,.btn{max-width:100%;white-space:normal}
   </div>
   <div class="module-head" style="margin-top:24px"><h2>Viral template library</h2><p>Pilih salah satu format untuk mengisi generator secara cepat.</p></div>
   <div class="template-grid" id="socialTemplates"></div>
- </section>
+ </div></details>
 
- <section class="module" id="calendar">
-  <div class="module-head"><div class="eyebrow">03 / CONTENT CALENDAR</div><h2>Rencanakan 30 hari konten.</h2><p>Susun 30 ide posting secara lokal atau minta AI Cloud membuat strategi yang lebih terperinci. Status posting dapat diubah kapan saja.</p></div>
+ <details class="module feature-disclosure" id="calendar">
+  <summary class="feature-summary"><span class="eyebrow">PERENCANAAN</span><strong>Kalender konten 30 hari</strong><small>Buat ide posting lokal atau strategi AI Cloud.</small></summary>
+<div class="feature-disclosure-body">
   <div class="module-card">
    <div class="grid2"><div class="field"><label for="calendarProduct">Produk untuk kalender</label><input id="calendarProduct" placeholder="Nama produk"></div><div class="field"><label for="calendarStart">Tanggal mulai</label><input id="calendarStart" type="date"></div></div>
    <button class="btn primary" id="makeCalendar" style="width:100%">Generate kalender 30 hari (Lokal)</button>
@@ -325,10 +394,11 @@ button,.btn{max-width:100%;white-space:normal}
    <div id="calendarSummary" class="note">Belum ada kalender yang dibuat.</div>
    <div class="calendar-list" id="calendarList" style="margin-top:13px"></div>
   </div>
- </section>
+ </div></details>
 
- <section class="module" id="vault">
-  <div class="module-head"><div class="eyebrow">04 / CONTENT VAULT</div><h2>Semua ide tersimpan, tidak tercecer.</h2><p>Kelola hasil generator, salin ulang, bagikan, dan ekspor arsip konten dari browser perangkat ini.</p></div>
+ <details class="module feature-disclosure" id="vault">
+  <summary class="feature-summary"><span class="eyebrow">ARSIP</span><strong>Content Vault & performa</strong><small>Kelola draft tersimpan dan catat angka aktual.</small></summary>
+<div class="feature-disclosure-body">
   <div class="metric-grid" style="margin-bottom:14px"><div class="metric"><small>Konten tersimpan</small><strong id="vaultCount">0</strong></div><div class="metric"><small>Jadwal aktif</small><strong id="scheduledCount">0</strong></div><div class="metric"><small>Konversi tercatat</small><strong id="conversionCount">0</strong></div></div>
   <div class="module-grid">
    <div class="module-card"><h3>Riwayat konten</h3><div class="field"><input id="vaultSearch" placeholder="Cari nama produk atau format..."></div><div id="vaultList"><div class="empty">Belum ada konten tersimpan.</div></div><div class="module-actions"><button class="btn secondary" id="exportVault">Backup Content Vault</button><button class="btn ghost" id="clearVault">Hapus semua riwayat</button></div></div>
@@ -339,23 +409,23 @@ button,.btn{max-width:100%;white-space:normal}
     <button class="btn primary" id="saveMetrics" style="width:100%">Simpan performa aktual</button><div id="metricSummary" class="note">Data performa akan diringkas di sini.</div>
    </div>
   </div>
- </section>
+ </div></details>
 
- <section class="library" id="library">
-  <div class="section-head"><div><div class="eyebrow">03 / CINEMATIC KNOWLEDGE BASE</div><h2>99 teknik cinematic</h2><p>Jelajahi istilah kamera, pencahayaan, komposisi, efek visual, dan storytelling.</p></div><span class="pill">9 CATEGORIES · 99 TECHNIQUES</span></div>
+ <details class="library feature-disclosure" id="library">
+  <summary class="feature-summary"><span class="eyebrow">PANDUAN</span><strong>Teknik sinematografi</strong><small>Jelajahi 99 istilah kamera, cahaya, dan komposisi.</small></summary>
+<div class="feature-disclosure-body">
   <div class="library-grid" id="libraryCards"></div>
   <div class="tech-controls"><input id="techSearch" placeholder="Cari teknik, contoh: orbit, macro..."><select id="techCategory"><option value="all">Semua kategori</option></select></div>
   <div class="tech-list" id="techList"></div>
- </section>
+ </div></details>
  <section id="about" style="margin:35px 0 55px">
   <div class="panel" style="padding:22px">
-   <div class="eyebrow">ABOUT THE STUDIO</div><h2 style="margin:10px 0">Creative tools for every product story.</h2>
-   <p style="max-width:800px;color:var(--muted);font-size:13px">Payung AI Studio adalah creative workspace untuk ide konten produk, script, caption, kalender posting, Content Vault, pencatatan performa manual, storyboard, dan prompt video iklan. Fitur lokal berjalan di browser tanpa akun. Saat login, Vault, kalender, dan metrik disinkronkan ke Supabase; proyek cinematic tetap tersimpan lokal per akun di browser. Fitur AI Cloud mengirim prompt teks ke backend Payung AI Studio dan provider AI. Link marketplace tidak diambil otomatis.</p>
-   <p style="color:var(--muted);font-size:11px">Catatan: Payung AI Studio bukan produk resmi Google dan tidak berafiliasi dengan Google. Nama Google Flow digunakan hanya untuk menjelaskan kompatibilitas alur kerja prompt.</p>
+   <div class="eyebrow">INFO</div><h2 style="margin:10px 0">Cara kerja Payung AI Studio</h2>
+   <p style="max-width:800px;color:var(--muted);font-size:13px">Draft lokal tersimpan di browser. Login diperlukan untuk AI Cloud, kredit, dan sinkronisasi. Saat memakai AI Cloud, prompt teks dikirim ke server dan provider; jangan masukkan password atau data rahasia. Tautan produk tidak diambil otomatis, jadi masukkan fakta produk sendiri.</p>
   </div>
  </section>
 </main>
-<footer><div class="container footer-inner"><span>© <span id="year"></span> Payung AI Studio. Made for creators.</span><span>Standalone HTML · Public · Free · No account required</span></div></footer>
+<footer><div class="container footer-inner"><span>© <span id="year"></span> Payung AI Studio. Made for creators.</span><span>Draft lokal tanpa akun · AI Cloud memerlukan login</span></div></footer>
 <div class="toast" id="toast">Tersalin ke clipboard</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0" integrity="sha384-gnyZit14c5lnGcarmA166QQjjJXpucw25ogZXuwH3HxxY904zHkBqmxVpelsPorb" crossorigin="anonymous"></script>
 <script>
@@ -372,6 +442,60 @@ const techniques = [
 ];
 const cameraOptions=["Dolly In","Orbit Shot","Tracking Shot","Macro Focus","Slow Motion","Product Reveal","Rack Focus","Crane Up","Close-up","Turnaround","Hero Product Shot","Golden Hour","Rim Lighting","Shallow Depth of Field"];
 let selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];
+let referencePreviewUrl=null;
+/* BEGIN LOCAL DATA VALIDATION */
+const PROJECT_VALUE_FIELDS = ["productName","category","description","usp","cta","duration","platform","language","style","mood","lighting","voice","music","extra"];
+const CALENDAR_STATUSES = new Set(["Belum dijadwalkan","Draft","Siap posting","Sudah posting"]);
+const isPlainRecord = value => !!value && typeof value === "object" && !Array.isArray(value);
+const boundedText = (value, limit=10000) => (typeof value === "string" || typeof value === "number") ? String(value).slice(0,limit) : "";
+const boundedNumber = value => { const n=Number(value); return Number.isFinite(n)&&n>=0 ? Math.min(n,1e15) : 0; };
+function normalizeProjectRecord(project){
+ if(!isPlainRecord(project)||!isPlainRecord(project.values))return null;
+ const values=Object.create(null);
+ for(const id of PROJECT_VALUE_FIELDS){if(Object.prototype.hasOwnProperty.call(project.values,id)){const value=project.values[id];if(typeof value==="string"||typeof value==="number")values[id]=String(value).slice(0,5000);}}
+ const cameras=Array.isArray(project.cameras)?project.cameras.filter(value=>cameraOptions.includes(value)).slice(0,14):[];
+ return {values,cameras,output:boundedText(project.output,60000),savedAt:boundedNumber(project.savedAt)};
+}
+function normalizeProjectStore(value){
+ if(!isPlainRecord(value))return Object.create(null);
+ const store=Object.create(null);
+ for(const [name,project] of Object.entries(value).slice(-500)){
+  const key=boundedText(name,120).trim(),record=normalizeProjectRecord(project);
+  if(key&&record)store[key]=record;
+ }
+ return store;
+}
+function normalizeVaultItems(value){
+ if(!Array.isArray(value))return [];
+ return value.filter(isPlainRecord).slice(-5000).map((item,index)=>({
+  id:boundedText(item.id,128)||`legacy-vault-${index}`,product:boundedText(item.product,200)||"Konten tanpa nama",
+  format:boundedText(item.format,120)||"Konten",caption:boundedText(item.caption,10000),text:boundedText(item.text,60000),createdAt:boundedNumber(item.createdAt)
+ }));
+}
+function normalizeCalendarDate(value){
+ if(typeof value!=="string"||!/^\d{4}-\d{2}-\d{2}$/.test(value))return "";
+ const [year,month,day]=value.split("-").map(Number),date=new Date(Date.UTC(year,month-1,day));
+ return year>=1000&&date.getUTCFullYear()===year&&date.getUTCMonth()===month-1&&date.getUTCDate()===day?value:"";
+}
+function normalizeCalendarItems(value){
+ if(!Array.isArray(value))return [];
+ return value.filter(isPlainRecord).slice(-1000).map((item,index)=>({
+  day:Number.isSafeInteger(Number(item.day))&&Number(item.day)>0?Number(item.day):index+1,
+  date:normalizeCalendarDate(item.date),
+  angle:boundedText(item.angle,240)||`Ide konten ${index+1}`,product:boundedText(item.product,200)||"Produk",
+  status:CALENDAR_STATUSES.has(item.status)?item.status:"Belum dijadwalkan"
+ }));
+}
+function normalizeMetricStore(value){
+ if(!isPlainRecord(value))return Object.create(null);
+ const metrics=Object.create(null);
+ for(const [id,row] of Object.entries(value).slice(-5000)){
+  if(!isPlainRecord(row))continue;const key=boundedText(id,128);if(!key)continue;
+  metrics[key]={views:boundedNumber(row.views),clicks:boundedNumber(row.clicks),orders:boundedNumber(row.orders),revenue:boundedNumber(row.revenue),updatedAt:boundedNumber(row.updatedAt)};
+ }
+ return metrics;
+}
+/* END LOCAL DATA VALIDATION */
 let lastOutput="";
 const $=id=>document.getElementById(id);
 const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -446,11 +570,10 @@ function recoverLegacyValue(base,raw){try{localStorage.setItem(`payungLegacyReco
 function saveLegacyDraftAsProject(draft){
  if(!draft?.project)return;
  try{
-  const key=projectStorageKey(),raw=localStorage.getItem(key);let store={};
-  if(raw!==null){const parsed=JSON.parse(raw);if(!parsed||typeof parsed!=="object"||Array.isArray(parsed))throw new Error("Invalid legacy project store");store=parsed;}
-  const product=draft.projectName||draft.project.productName||"Draft";let name=`${product} (draft lama)`,i=2;
-  while(Object.prototype.hasOwnProperty.call(store,name))name=`${product} (draft lama ${i++})`;
-  store[name]=draft.project;localStorage.setItem(key,JSON.stringify(store));
+  const store=getProjectStore(),product=boundedText(draft.projectName||draft.project.productName||"Draft",100)||"Draft";
+  let name=`${product} (draft lama)`,i=2;while(Object.prototype.hasOwnProperty.call(store,name))name=`${product} (draft lama ${i++})`;
+  const project=normalizeProjectRecord(draft.project);if(!project)return;
+  store[name]=project;localStorage.setItem(projectStorageKey(),JSON.stringify(store));
  }catch(e){recoverLegacyValue(DRAFT_KEY,JSON.stringify(draft));}
 }
 function mergeLegacyLocalValue(base,legacyRaw,currentRaw){
@@ -503,7 +626,7 @@ const templatePresets={
  home:{category:"Rumah tangga",style:"Natural lifestyle",mood:"Warm, friendly, authentic",lighting:"Natural window light",voice:"Narator pria, hangat dan meyakinkan",music:"Minimal ambient and subtle sound effects",description:"Tampilkan produk di lingkungan rumah yang rapi dan realistis, dengan demonstrasi penggunaan yang masuk akal.",usp:"Membantu aktivitas sehari-hari"}
 };
 migrateLegacyLocalData();
-function getProjectStore(){try{return JSON.parse(localStorage.getItem(projectStorageKey())||"{}")}catch(e){return {}}}
+function getProjectStore(){try{return normalizeProjectStore(JSON.parse(localStorage.getItem(projectStorageKey())||"{}"))}catch(e){return Object.create(null)}}
 function refreshProjectList(selected=""){
  const store=getProjectStore(),keys=Object.keys(store).sort((a,b)=>store[b].savedAt-store[a].savedAt);
  $("savedProjects").innerHTML=keys.length?'<option value="">Pilih proyek tersimpan…</option>'+keys.map(k=>'<option value="'+escapeHtml(k)+'">'+escapeHtml(k)+'</option>').join(""):'<option value="">Belum ada proyek tersimpan</option>';
@@ -515,11 +638,11 @@ function captureProject(){
  return {values,cameras:[...selectedCameras],output:lastOutput,savedAt:Date.now()};
 }
 function applyProject(project){
- if(!project||!project.values)return;
- Object.entries(project.values).forEach(([id,value])=>{if($(id))$(id).value=value});
- selectedCameras=Array.isArray(project.cameras)?project.cameras:[];renderCameraChips();updateSummary();
- if(project.output)lastOutput=project.output;
- toast("Proyek berhasil dimuat. Tekan Generate untuk membuat ulang storyboard.");
+ const safeProject=normalizeProjectRecord(project);if(!safeProject)return;
+ Object.entries(safeProject.values).forEach(([id,value])=>{if($(id))$(id).value=value});
+ selectedCameras=safeProject.cameras;renderCameraChips();updateSummary();
+ if(safeProject.output)lastOutput=safeProject.output;
+ toast("Proyek berhasil dimuat. Tekan Buat storyboard untuk membuat ulang.");
 }
 $("applyTemplate").addEventListener("click",()=>{
  const key=$("adTemplate").value,preset=templatePresets[key];if(!preset){toast("Pilih template terlebih dahulu.");return}
@@ -543,10 +666,10 @@ function persistDraft(){
 }
 function restoreDraft(){
  try{const raw=localStorage.getItem(draftStorageKey());if(!raw)return;const draft=JSON.parse(raw);if(draft&&draft.project){applyProject(draft.project);$("projectName").value=draft.projectName||"";}}
- catch(e){localStorage.removeItem(draftStorageKey());}
+ catch(e){try{localStorage.removeItem(draftStorageKey())}catch(ignored){}}
 }
 function clearGeneratorDraft(){
- clearTimeout(draftTimer);document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(el=>el.value="");
+ clearTimeout(draftTimer);if(referencePreviewUrl){URL.revokeObjectURL(referencePreviewUrl);referencePreviewUrl=null;}document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(el=>el.value="");
  $("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;
  $("reference").value="";$("preview").removeAttribute("src");$("preview").style.display="none";$("projectName").value="";$("results").style.display="none";$("aiStoryboardOutput").textContent="Storyboard versi AI Cloud akan muncul di sini.";lastOutput="";
  selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();
@@ -556,23 +679,23 @@ function downloadJson(filename,data){
  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 $("exportBackup").addEventListener("click",()=>{
- const backup={app:"Payung AI Studio",version:"3.0",exportedAt:new Date().toISOString(),projects:getProjectStore(),draft:{project:captureProject(),projectName:$("projectName").value},vault:safeRead("payungStudioVaultV3",[]),calendar:safeRead("payungStudioCalendarV3",[]),metrics:safeRead("payungStudioMetricsV3",{})};
+ const backup={app:"Payung AI Studio",version:"3.0",exportedAt:new Date().toISOString(),projects:getProjectStore(),draft:{project:captureProject(),projectName:$("projectName").value},vault:getVault(),calendar:normalizeCalendarItems(safeRead(CAL_KEY,[])),metrics:normalizeMetricStore(safeRead(METRIC_KEY,{}))};
  downloadJson("payung-ai-studio-backup.json",backup);toast("Backup JSON berhasil dibuat.");
 });
 $("importBackup").addEventListener("click",()=>$("backupFile").click());
 $("backupFile").addEventListener("change",event=>{
  const file=event.target.files&&event.target.files[0];if(!file)return;
+ if(file.size>5*1024*1024){toast("Ukuran backup maksimal 5 MB.");event.target.value="";return;}
  const reader=new FileReader();reader.onload=()=>{
   try{
    const data=JSON.parse(String(reader.result||""));
-   if(!data||data.app!=="Payung AI Studio"||!data.projects||typeof data.projects!=="object"||Array.isArray(data.projects))throw new Error("Format backup tidak dikenali");
-   const importedRecords=rows=>Array.isArray(rows)?rows.filter(row=>row&&typeof row==="object"&&!Array.isArray(row)).slice(0,5000):[];
-   const existing=getProjectStore();const merged={...existing,...data.projects};
+   if(!isPlainRecord(data)||data.app!=="Payung AI Studio"||!isPlainRecord(data.projects))throw new Error("Format backup tidak dikenali");
+   const existing=getProjectStore(),imported=normalizeProjectStore(data.projects),merged=Object.assign(Object.create(null),existing,imported);
    localStorage.setItem(projectStorageKey(),JSON.stringify(merged));
-   if(Array.isArray(data.vault))safeWrite("payungStudioVaultV3",importedRecords(data.vault));
-   if(Array.isArray(data.calendar))safeWrite("payungStudioCalendarV3",importedRecords(data.calendar));
-   if(data.metrics&&typeof data.metrics==="object")safeWrite("payungStudioMetricsV3",data.metrics);
-   if(data.draft&&data.draft.project){applyProject(data.draft.project);$("projectName").value=data.draft.projectName||"";persistDraft();}
+   if(Array.isArray(data.vault))safeWrite(VAULT_KEY,normalizeVaultItems(data.vault));
+   if(Array.isArray(data.calendar))safeWrite(CAL_KEY,normalizeCalendarItems(data.calendar));
+   if(isPlainRecord(data.metrics))safeWrite(METRIC_KEY,normalizeMetricStore(data.metrics));
+   if(isPlainRecord(data.draft)&&data.draft.project){applyProject(data.draft.project);$("projectName").value=boundedText(data.draft.projectName,120);persistDraft();}
    refreshProjectList();if(typeof renderCalendar==="function")renderCalendar();if(typeof updateVault==="function")updateVault();toast("Backup berhasil dipulihkan.");
   }catch(err){toast("File backup tidak valid atau penyimpanan penuh.");}
   event.target.value="";
@@ -589,9 +712,10 @@ $("copyAll").addEventListener("click",()=>copyText(lastOutput));
 $("copyMaster").addEventListener("click",()=>copyText($("masterPrompt").textContent));
 $("download").addEventListener("click",()=>{if(!lastOutput)return;const blob=new Blob([lastOutput],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="payung-ai-studio-storyboard.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
 $("print").addEventListener("click",()=>window.print());
-$("reset").addEventListener("click",()=>{document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(x=>x.value="");$("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;$("reference").value="";$("preview").style.display="none";selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();$("results").style.display="none";try{localStorage.removeItem(draftStorageKey())}catch(e){}$("projectName").value="";toast("Formulir direset.")});
-$("reference").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;if(!f.type.startsWith("image/")){toast("Pilih file gambar.");return}const url=URL.createObjectURL(f);$("preview").src=url;$("preview").style.display="block"});
+$("reset").addEventListener("click",()=>{clearGeneratorDraft();try{localStorage.removeItem(draftStorageKey())}catch(e){}toast("Formulir direset.")});
+$("reference").addEventListener("change",e=>{const f=e.target.files&&e.target.files[0];if(referencePreviewUrl){URL.revokeObjectURL(referencePreviewUrl);referencePreviewUrl=null}$("preview").removeAttribute("src");$("preview").style.display="none";if(!f)return;if((f.type&&!f.type.startsWith("image/"))||f.size>10*1024*1024){e.target.value="";toast(f.size>10*1024*1024?"Foto maksimal 10 MB.":"Pilih file gambar.");return}referencePreviewUrl=URL.createObjectURL(f);$("preview").src=referencePreviewUrl;$("preview").style.display="block"});
 $("techSearch").addEventListener("input",renderTech);$("techCategory").addEventListener("change",renderTech);
+document.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener("click",()=>{const target=$(link.getAttribute("href").slice(1));if(target&&target.tagName==="DETAILS")target.open=true}));
 
 // PAYUNG AI STUDIO 3.0 — local social-commerce content suite
 const VAULT_KEY="payungStudioVaultV3",CAL_KEY="payungStudioCalendarV3",METRIC_KEY="payungStudioMetricsV3";
@@ -610,7 +734,7 @@ const socialFormats={
 let currentSocialText="",currentCalendar=[];
 const workspaceDataKeys=new Set([VAULT_KEY,CAL_KEY,METRIC_KEY]);
 const workspaceDirtyKey=userId=>`payungStudioWorkspaceDirty:${userId}`;
-const safeRead=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(storageKeyFor(key))||JSON.stringify(fallback))}catch(e){return fallback}};
+const safeRead=(key,fallback)=>{try{const raw=localStorage.getItem(storageKeyFor(key));if(raw===null)return fallback;const value=JSON.parse(raw);if(Array.isArray(fallback))return Array.isArray(value)?value:fallback;if(isPlainRecord(fallback))return isPlainRecord(value)?value:fallback;return typeof value===typeof fallback?value:fallback}catch(e){return fallback}};
 const safeWrite=(key,value)=>{try{
  localStorage.setItem(storageKeyFor(key),JSON.stringify(value));
  if(workspaceDataKeys.has(key)){
@@ -670,13 +794,13 @@ ${visual}
 CATATAN: Periksa harga, stok, spesifikasi, dan klaim sebelum dipublikasikan.`;
  $("socialOutput").textContent=currentSocialText;return currentSocialText;
 }
-function getVault(){return safeRead(VAULT_KEY,[])}
+function getVault(){return normalizeVaultItems(safeRead(VAULT_KEY,[]))}
 function updateVault(){
  const vault=getVault(),q=($("vaultSearch")?.value||"").toLowerCase(),filtered=vault.filter(x=>(x.product+" "+x.format).toLowerCase().includes(q));
  $("vaultCount").textContent=vault.length;$("scheduledCount").textContent=currentCalendar.filter(x=>x.status!=="Belum dijadwalkan").length;
  $("vaultList").innerHTML=filtered.length?filtered.slice().reverse().map(item=>`<div class="vault-item"><strong>${escapeHtml(item.product)} — ${escapeHtml(item.format)}</strong><small>${new Date(item.createdAt).toLocaleString("id-ID")} · ${escapeHtml(item.caption||"").slice(0,100)}</small><div class="vault-actions"><button class="copy-small" data-vault-copy="${escapeHtml(item.id)}">Salin</button><button class="copy-small" data-vault-share="${escapeHtml(item.id)}">Bagikan</button><button class="copy-small" data-vault-delete="${escapeHtml(item.id)}">Hapus</button></div></div>`).join(""):'<div class="empty">Belum ada konten yang cocok.</div>';
  const sel=$("metricContent"),old=sel.value;sel.innerHTML=vault.length?'<option value="">Pilih konten…</option>'+vault.map(x=>`<option value="${escapeHtml(x.id)}">${escapeHtml(x.product)} — ${escapeHtml(x.format)}</option>`).join(""):'<option value="">Belum ada konten</option>';if(vault.some(x=>x.id===old))sel.value=old;
- const metrics=safeRead(METRIC_KEY,{});let views=0,orders=0;Object.values(metrics).forEach(m=>{views+=Number(m.views)||0;orders+=Number(m.orders)||0});$("conversionCount").textContent=orders.toLocaleString("id-ID");$("metricSummary").textContent=`Total views tercatat: ${views.toLocaleString("id-ID")} · Pesanan: ${orders.toLocaleString("id-ID")}`;
+ const metrics=normalizeMetricStore(safeRead(METRIC_KEY,{}));let views=0,orders=0;Object.values(metrics).forEach(m=>{views+=Number(m.views)||0;orders+=Number(m.orders)||0});$("conversionCount").textContent=orders.toLocaleString("id-ID");$("metricSummary").textContent=`Total views tercatat: ${views.toLocaleString("id-ID")} · Pesanan: ${orders.toLocaleString("id-ID")}`;
  $("vaultList").querySelectorAll("[data-vault-copy]").forEach(b=>b.onclick=()=>{const x=getVault().find(v=>v.id===b.dataset.vaultCopy);if(x)copyText(x.text)});
  $("vaultList").querySelectorAll("[data-vault-share]").forEach(b=>b.onclick=async()=>{const x=getVault().find(v=>v.id===b.dataset.vaultShare);if(x)await shareText(x.text,x.product)});
  $("vaultList").querySelectorAll("[data-vault-delete]").forEach(b=>b.onclick=()=>{safeWrite(VAULT_KEY,getVault().filter(v=>v.id!==b.dataset.vaultDelete));updateVault();toast("Konten dihapus dari Vault.")});
@@ -690,8 +814,8 @@ function buildCalendar(){
  safeWrite(CAL_KEY,currentCalendar);renderCalendar();toast("Kalender 30 hari berhasil dibuat.");
 }
 function renderCalendar(){
- currentCalendar=safeRead(CAL_KEY,[]);$("calendarSummary").textContent=currentCalendar.length?`${currentCalendar.length} ide konten untuk ${currentCalendar[0].product}. Status dapat diperbarui per hari.`:"Belum ada kalender yang dibuat.";
- $("calendarList").innerHTML=currentCalendar.length?currentCalendar.map(x=>`<div class="calendar-day"><div class="dayno">${escapeHtml(String(x.day).padStart(2,"0"))}</div><div><b>${escapeHtml(x.angle)}</b><small>${new Date(x.date+"T12:00:00").toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})} · ${escapeHtml(x.product)}</small></div><select data-calendar-status="${escapeHtml(x.day)}"><option ${x.status==="Belum dijadwalkan"?"selected":""}>Belum dijadwalkan</option><option ${x.status==="Draft"?"selected":""}>Draft</option><option ${x.status==="Siap posting"?"selected":""}>Siap posting</option><option ${x.status==="Sudah posting"?"selected":""}>Sudah posting</option></select></div>`).join(""):'<div class="empty">Generate kalender untuk melihat 30 ide posting.</div>';
+ currentCalendar=normalizeCalendarItems(safeRead(CAL_KEY,[]));$("calendarSummary").textContent=currentCalendar.length?`${currentCalendar.length} ide konten untuk ${currentCalendar[0].product}. Status dapat diperbarui per hari.`:"Belum ada kalender yang dibuat.";
+ $("calendarList").innerHTML=currentCalendar.length?currentCalendar.map(x=>`<div class="calendar-day"><div class="dayno">${escapeHtml(String(x.day).padStart(2,"0"))}</div><div><b>${escapeHtml(x.angle)}</b><small>${(x.date?new Date(x.date+"T12:00:00").toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"}):"Tanggal belum ditentukan")} · ${escapeHtml(x.product)}</small></div><select data-calendar-status="${escapeHtml(x.day)}"><option ${x.status==="Belum dijadwalkan"?"selected":""}>Belum dijadwalkan</option><option ${x.status==="Draft"?"selected":""}>Draft</option><option ${x.status==="Siap posting"?"selected":""}>Siap posting</option><option ${x.status==="Sudah posting"?"selected":""}>Sudah posting</option></select></div>`).join(""):'<div class="empty">Generate kalender untuk melihat 30 ide posting.</div>';
  $("calendarList").querySelectorAll("[data-calendar-status]").forEach(sel=>sel.onchange=()=>{const day=Number(sel.dataset.calendarStatus),row=currentCalendar.find(x=>x.day===day);if(row){row.status=sel.value;safeWrite(CAL_KEY,currentCalendar);updateVault()}});updateVault();
 }
 $("makeSocial").addEventListener("click",createSocialContent);
@@ -703,10 +827,10 @@ $("makeCalendar").addEventListener("click",buildCalendar);
 $("resetCalendar").addEventListener("click",()=>{currentCalendar=[];safeWrite(CAL_KEY,[]);renderCalendar();toast("Kalender diatur ulang.")});
 $("exportCalendar").addEventListener("click",()=>{if(!currentCalendar.length){toast("Belum ada kalender.");return}const txt=currentCalendar.map(x=>`Hari ${x.day} | ${x.date} | ${x.angle} | ${x.status}`).join("\n");downloadText("payung-calendar-30-hari.txt",txt)});
 function downloadText(name,text){const a=document.createElement("a"),url=URL.createObjectURL(new Blob([text],{type:"text/plain;charset=utf-8"}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-$("exportVault").addEventListener("click",()=>{const data=getVault();if(!data.length){toast("Content Vault masih kosong.");return}downloadJson("payung-content-vault.json",{app:"Payung AI Studio",version:"3.0",items:data,metrics:safeRead(METRIC_KEY,{})})});
+$("exportVault").addEventListener("click",()=>{const data=getVault();if(!data.length){toast("Content Vault masih kosong.");return}downloadJson("payung-content-vault.json",{app:"Payung AI Studio",version:"3.0",items:data,metrics:normalizeMetricStore(safeRead(METRIC_KEY,{}))})});
 $("clearVault").addEventListener("click",()=>{if(!confirm("Hapus seluruh riwayat Content Vault di perangkat ini?"))return;safeWrite(VAULT_KEY,[]);updateVault();toast("Content Vault dikosongkan.")});
-$("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value;if(!id){toast("Pilih konten terlebih dahulu.");return}const data=safeRead(METRIC_KEY,{});data[id]={views:Math.max(0,Number($("metricViews").value)||0),clicks:Math.max(0,Number($("metricClicks").value)||0),orders:Math.max(0,Number($("metricOrders").value)||0),revenue:Math.max(0,Number($("metricRevenue").value)||0),updatedAt:Date.now()};if(safeWrite(METRIC_KEY,data)){updateVault();toast("Performa aktual tersimpan.")}});
-$("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=safeRead(METRIC_KEY,{})[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
+$("saveMetrics").addEventListener("click",()=>{const id=$("metricContent").value;if(!id){toast("Pilih konten terlebih dahulu.");return}const data=normalizeMetricStore(safeRead(METRIC_KEY,{}));data[id]={views:boundedNumber($("metricViews").value),clicks:boundedNumber($("metricClicks").value),orders:boundedNumber($("metricOrders").value),revenue:boundedNumber($("metricRevenue").value),updatedAt:Date.now()};if(safeWrite(METRIC_KEY,data)){updateVault();toast("Performa aktual tersimpan.")}});
+$("metricContent").addEventListener("change",()=>{const id=$("metricContent").value,m=normalizeMetricStore(safeRead(METRIC_KEY,{}))[id]||{};$("metricViews").value=m.views||"";$("metricClicks").value=m.clicks||"";$("metricOrders").value=m.orders||"";$("metricRevenue").value=m.revenue||""});
 const payungLocalDate=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
 $("calendarStart").value=payungLocalDate();
 currentCalendar=[];socialTemplateCards();
@@ -843,7 +967,7 @@ async function payungLoadWorkspace(expectedUserId){
   if(data){
    localStorage.setItem(storageKeyFor(VAULT_KEY),JSON.stringify(Array.isArray(data.vault)?data.vault:[]));localStorage.setItem(storageKeyFor(CAL_KEY),JSON.stringify(Array.isArray(data.calendar)?data.calendar:[]));localStorage.setItem(storageKeyFor(METRIC_KEY),JSON.stringify(data.metrics&&typeof data.metrics==="object"?data.metrics:{}));
   }else{
-   const initial={user_id:expectedUserId,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};
+   const initial={user_id:expectedUserId,vault:normalizeVaultItems(safeRead(VAULT_KEY,[])),calendar:normalizeCalendarItems(safeRead(CAL_KEY,[])),metrics:normalizeMetricStore(safeRead(METRIC_KEY,{})),updated_at:new Date().toISOString()};
    const {error:saveError}=await payungSupabase.from("user_workspace").upsert(initial,{onConflict:"user_id"});
    if(!isCurrent())return;if(saveError)throw saveError;
    if(localWasEdited()||localStorage.getItem(workspaceDirtyKey(expectedUserId))==="1"){preferLocalWorkspace();return;}
@@ -851,7 +975,7 @@ async function payungLoadWorkspace(expectedUserId){
   if(!isCurrent())return;currentCalendar=safeRead(CAL_KEY,[]);renderCalendar();updateVault();payungWorkspaceReadyUserId=expectedUserId;
  }catch(e){if(isCurrent())payungStatus("Login aktif, tetapi sinkronisasi cloud belum berhasil. Salinan lokal per akun tetap tersedia.");}
 }
-function payungWorkspacePayload(userId){return {user_id:userId,vault:safeRead(VAULT_KEY,[]),calendar:safeRead(CAL_KEY,[]),metrics:safeRead(METRIC_KEY,{}),updated_at:new Date().toISOString()};}
+function payungWorkspacePayload(userId){return {user_id:userId,vault:normalizeVaultItems(safeRead(VAULT_KEY,[])),calendar:normalizeCalendarItems(safeRead(CAL_KEY,[])),metrics:normalizeMetricStore(safeRead(METRIC_KEY,{})),updated_at:new Date().toISOString()};}
 async function payungFlushWorkspace(){
  const userId=payungSession?.user?.id;if(!userId)return true;if(!payungSessionVerified||payungSessionLocked||payungWorkspaceReadyUserId!==userId)return false;
  clearTimeout(payungSyncTimer);const editVersion=payungWorkspaceEditVersion;
@@ -937,6 +1061,7 @@ function payungCreateAIRequestId(){
  const hex=Array.from(bytes,value=>value.toString(16).padStart(2,"0")).join("");
  return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 }
+function payungOpenAccountPanel(){const account=$("account");if(account&&account.tagName==="DETAILS")account.open=true;account?.scrollIntoView({behavior:"smooth",block:"center"});}
 async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
  if(payungAiRequestInFlight){toast("Permintaan AI lain sedang diproses. Tunggu hingga selesai.");return null}
  payungAiRequestInFlight=true;
@@ -949,7 +1074,7 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
   try{const result=await payungSupabase.auth.getSession();session=result?.data?.session||null;}
   catch(error){payungRequestSessionRefresh();toast("Sesi belum dapat diverifikasi. Coba lagi setelah koneksi pulih.");return null;}
   const currentUserId=payungSession?.user?.id||null,sessionUserId=session?.user?.id||null;
-  if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan AI Cloud.");document.querySelector("#account").scrollIntoView({behavior:"smooth"});return null;}
+  if(!session){if(currentUserId)payungRequestSessionRefresh();toast("Login dahulu untuk menggunakan AI Cloud.");payungOpenAccountPanel();return null;}
   if(!payungSessionVerified||payungSessionLocked||!currentUserId||sessionUserId!==currentUserId){payungRequestSessionRefresh();toast("Sesi akun berubah. Periksa status login lalu coba lagi.");return null;}
   const response=await fetch(PAYUNG_GENERATE_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"Idempotency-Key":idempotencyKey},body:JSON.stringify({action,prompt})});
   const data=await response.json();let activeSession=null;
