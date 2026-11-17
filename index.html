@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#10131d">
-<meta name="description" content="Payung AI Studio membantu kreator membuat storyboard iklan dan konten produk, dengan draft lokal atau AI Cloud.">
+<meta name="description" content="Payung AI Studio membantu kreator menyusun storyboard video promosi produk maupun video umum, dengan draft lokal atau AI Cloud.">
 <title>Payung AI Studio — Konten & Storyboard</title>
 <style>
 :root{
@@ -201,6 +201,19 @@ header{background:rgba(11,13,20,.94)}
 .tool-disclosure{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
 .tool-disclosure-body{padding-top:10px}
 .tool-disclosure .btn{margin-top:8px}
+.mode-fieldset{border:0;margin:0 0 18px;padding:0;min-width:0}
+.mode-fieldset legend{font-size:12px;color:#cbd3e2;font-weight:700;padding:0 0 8px}
+.mode-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.mode-card{position:relative;display:block;min-width:0;border:1px solid #303a50;border-radius:12px;background:#0d1220;padding:13px 14px;cursor:pointer;transition:background-color .15s,border-color .15s}
+.mode-card input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mode-card-title{display:block;font-size:14px;color:var(--text);font-weight:800;margin-bottom:4px}
+.mode-card-copy{display:block;color:var(--muted);font-size:11px;line-height:1.4}
+.mode-card.selected{border-color:var(--accent2);background:rgba(110,231,216,.08)}
+.mode-card:focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+.generate-methods{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 0 8px}
+.generate-methods strong{font-size:12px}
+.generate-methods span{font-size:11px;color:var(--muted)}
+@media(max-width:600px){.mode-choices{gap:8px}.mode-card{padding:11px}.mode-card-title{font-size:13px}.generate-methods{display:block}.generate-methods span{display:block}}
 :focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
 #generator,#results,#content-engine,#calendar,#vault,#library,#account{scroll-margin-top:86px}
 @media(max-width:700px){
@@ -236,8 +249,8 @@ header{background:rgba(11,13,20,.94)}
  <section class="hero" id="top">
   <div>
    <div class="eyebrow">WORKSPACE KREATOR</div>
-   <h1>Buat konten produk<br><span class="gradient">tanpa mulai dari nol.</span></h1>
-   <p>Tulis brief sekali untuk menyusun storyboard iklan, ide konten sosial, dan rencana posting. Mulai dengan draft lokal; AI Cloud tersedia setelah login.</p>
+   <h1>Rancang video cerita<br><span class="gradient">tanpa mulai dari nol.</span></h1>
+   <p>Tulis brief untuk membuat storyboard promosi produk atau video umum—seperti tutorial, vlog, dan storytelling. Mulai dengan draft lokal; AI Cloud tersedia setelah login.</p>
    <div class="hero-actions"><a class="btn primary" href="#generator">Mulai membuat storyboard</a><a class="btn secondary" href="#content-engine">Buat konten sosial</a></div>
   </div>
  </section>
@@ -272,26 +285,30 @@ header{background:rgba(11,13,20,.94)}
 </details>
 
  <section id="generator">
-  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2>Bangun iklan cinematic Anda</h2><p>Isi informasi inti. Pengaturan visual lainnya dapat dibuka bila diperlukan.</p></div><span class="pill">LOKAL + AI CLOUD</span></div>
+  <div class="section-head"><div><div class="eyebrow">01 / CINEMATIC CREATION</div><h2 id="generatorTitle">Bangun iklan cinematic Anda</h2><p id="generatorIntro">Pilih mode video, lalu isi brief. Pengaturan visual lainnya dapat dibuka bila diperlukan.</p></div><span class="pill">LOKAL + AI CLOUD</span></div>
   <div class="workspace">
    <div class="panel form-panel">
     <div class="form-section">
-     <h3><span class="step">01</span> Informasi produk</h3>
+     <h3><span class="step">01</span> Brief video</h3>
+     <fieldset class="mode-fieldset"><legend>Jenis video</legend><div class="mode-choices"><label class="mode-card selected" id="modeProductCard"><input type="radio" name="videoModeChoice" id="modeProduct" value="product" checked><span class="mode-card-title">Promosi produk</span><span class="mode-card-copy">Sorot produk, manfaat, dan ajakan.</span></label><label class="mode-card" id="modeGeneralCard"><input type="radio" name="videoModeChoice" id="modeGeneral" value="general"><span class="mode-card-title">Video umum</span><span class="mode-card-copy">Tutorial, vlog, atau cerita tanpa CTA jualan.</span></label></div><select id="videoMode" hidden aria-hidden="true" tabindex="-1"><option value="product">Promosi produk</option><option value="general">Video umum</option></select></fieldset>
      <div class="grid2">
-      <div class="field"><label for="productName">Nama produk / merek *</label><input id="productName" placeholder="Contoh: Bawang Hitam Premium"></div>
-      <div class="field"><label for="category">Kategori produk</label><select id="category"><option>Makanan dan minuman</option><option>Skincare dan kecantikan</option><option>Fashion dan aksesoris</option><option>Elektronik dan gadget</option><option>Produk kesehatan</option><option>Rumah tangga</option><option>Otomotif</option><option>Produk umum</option></select></div>
+      <div class="field"><label for="productName" id="topicLabel">Nama produk / merek *</label><input id="productName" placeholder="Contoh: Bawang Hitam Premium"></div>
+      <div class="field"><label for="category" id="categoryLabel">Kategori produk</label><select id="category">
+       <optgroup label="Kategori produk" data-video-mode="product"><option>Makanan dan minuman</option><option>Skincare dan kecantikan</option><option>Fashion dan aksesoris</option><option>Elektronik dan gadget</option><option>Produk kesehatan</option><option>Rumah tangga</option><option>Otomotif</option><option>Produk umum</option></optgroup>
+       <optgroup label="Jenis video umum" data-video-mode="general" hidden><option value="Tutorial &amp; edukasi">Tutorial &amp; edukasi</option><option value="Vlog &amp; keseharian">Vlog &amp; keseharian</option><option>Storytelling</option><option value="Explainer &amp; dokumenter">Explainer &amp; dokumenter</option><option value="Hiburan &amp; kreatif">Hiburan &amp; kreatif</option><option>Lainnya</option></optgroup>
+      </select></div>
      </div>
-     <div class="field"><label for="description">Deskripsi singkat produk</label><textarea id="description" placeholder="Jelaskan bentuk, bahan, kemasan, karakter, atau keunikan produk..."></textarea></div>
+     <div class="field"><label for="description" id="descriptionLabel">Deskripsi singkat produk</label><textarea id="description" placeholder="Jelaskan bentuk, bahan, kemasan, karakter, atau keunikan produk..."></textarea></div>
      <div class="grid2">
-      <div class="field"><label for="usp">Keunggulan / pesan utama</label><input id="usp" placeholder="Contoh: rasa khas, kemasan praktis"></div>
-      <div class="field"><label for="cta">Call to action</label><input id="cta" value="Pesan sekarang"></div>
+      <div class="field"><label for="usp" id="uspLabel">Keunggulan / pesan utama</label><input id="usp" placeholder="Contoh: rasa khas, kemasan praktis"></div>
+      <div class="field"><label for="cta" id="ctaLabel">Call to action</label><input id="cta" value="Pesan sekarang" placeholder="Contoh: Pesan sekarang"></div>
      </div>
 
     </div>
     <div class="form-section">
      <h3><span class="step">02</span> Format video</h3>
      <div class="grid2">
-      <div class="field"><label for="duration">Durasi iklan</label><select id="duration"><option value="10">10 detik</option><option value="20" selected>20 detik</option><option value="30">30 detik</option></select></div>
+      <div class="field"><label for="duration" id="durationLabel">Durasi iklan</label><select id="duration"><option value="10">10 detik</option><option value="20" selected>20 detik</option><option value="30">30 detik</option></select></div>
       <div class="field"><label for="platform">Platform / rasio</label><select id="platform"><option value="TikTok / Instagram Reels — vertical 9:16">TikTok / Reels (9:16)</option><option value="YouTube — horizontal 16:9">YouTube (16:9)</option><option value="Facebook Ads — vertical 4:5">Facebook Ads (4:5)</option><option value="Universal — square 1:1">Square (1:1)</option></select></div>
      </div>
      <div class="field"><label for="language">Bahasa prompt</label><select id="language"><option value="English">English (recommended for video models)</option><option value="Indonesia">Bahasa Indonesia</option></select></div>
@@ -299,7 +316,7 @@ header{background:rgba(11,13,20,.94)}
     <details class="advanced-settings">
      <summary>Pengaturan lanjutan <small>Gaya, kamera, audio, dan foto referensi</small></summary>
      <div class="advanced-settings-body">
-     <div class="field"><label for="reference">Foto referensi produk (opsional)</label><div class="upload">Unggah foto untuk panduan visual saat menyusun prompt.<input id="reference" type="file" accept="image/*"><img id="preview" class="preview" alt="Pratinjau foto produk"></div><span class="hint">Foto hanya dipratinjau secara lokal. Tidak dikirim ke server atau provider AI.</span></div>
+     <div class="field"><label for="reference" id="referenceLabel">Foto referensi produk (opsional)</label><div class="upload"><span id="referenceUploadText">Unggah foto untuk panduan visual saat menyusun prompt.</span><input id="reference" type="file" accept="image/*"><img id="preview" class="preview" alt="Pratinjau foto referensi"></div><span class="hint" id="referenceHint">Foto hanya dipratinjau secara lokal. Tidak dikirim ke server atau provider AI.</span></div>
     <div class="form-section">
      <h3><span class="step">03</span> Arah visual & sinematografi</h3>
      <div class="grid2">
@@ -319,23 +336,23 @@ header{background:rgba(11,13,20,.94)}
     </div>
      </div>
     </details>
-    <button class="btn primary" id="generate" style="width:100%;padding:15px">Buat storyboard lokal</button>
-    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">Buat dengan AI Cloud · perlu login & kredit</button>
+    <div class="generate-methods"><strong>Cara membuat</strong><span>Lokal tanpa login/kredit · AI Cloud perlu login/kredit.</span></div>
+    <button class="btn primary" id="generate" style="width:100%;padding:15px">Buat storyboard · lokal</button>
+    <button class="btn secondary" id="generateAIStoryboard" style="width:100%;margin-top:9px;padding:13px">Buat storyboard · AI Cloud</button>
     <div id="aiStoryboardOutput" class="content-output" style="margin-top:12px">Storyboard versi AI Cloud akan muncul di sini.</div>
    </div>
    <aside class="panel sidebar">
-    <h3>Creative brief</h3><p>Ringkasan pengaturan proyek Anda.</p>
-    <div class="stat"><span>Durasi</span><b id="sumDuration">20 detik</b></div>
+    <h3>Ringkasan</h3><p>Mode, durasi, dan format storyboard.</p>
+    <div class="stat"><span>Mode</span><b id="sumMode">Promosi produk</b></div><div class="stat"><span>Durasi</span><b id="sumDuration">20 detik</b></div>
     <div class="stat"><span>Jumlah adegan</span><b id="sumScenes">5 adegan</b></div>
     <div class="stat"><span>Format</span><b id="sumRatio">9:16</b></div>
     <div class="stat"><span>Output</span><b>Storyboard + prompts</b></div>
     <button class="btn secondary" id="reset">↺ Reset formulir</button>
     <div class="note">Generator menggunakan template dan aturan kreatif lokal. Aplikasi ini menyusun storyboard dan prompt, bukan merender video. Hasil AI dapat berbeda; periksa detail produk dan klaim iklan sebelum dipublikasikan.</div>
-    <details class="tool-disclosure"><summary>Template & proyek <small>Simpan, buka, atau pulihkan draft</small></summary><div class="tool-disclosure-body">
-     <div class="field"><label for="adTemplate">Template iklan siap pakai</label><select id="adTemplate">
-      <option value="">Pilih template kreatif…</option><option value="food">Food & Beverage — appetizing hero</option><option value="beauty">Skincare — clean beauty reveal</option><option value="fashion">Fashion — editorial product film</option><option value="tech">Gadget — futuristic tech launch</option><option value="home">Home & Lifestyle — warm everyday story</option>
-     </select></div>
-     <button class="btn secondary" id="applyTemplate" style="width:100%;margin:0 0 15px">Terapkan template</button>
+    <details class="tool-disclosure"><summary>Template produk & proyek <small>Template promosi; proyek untuk kedua mode</small></summary><div class="tool-disclosure-body">
+     <div id="productTemplateControls"><div class="field"><label for="adTemplate">Template produk</label><select id="adTemplate">
+      <option value="">Pilih template produk…</option><option value="food">Food & Beverage — appetizing hero</option><option value="beauty">Skincare — clean beauty reveal</option><option value="fashion">Fashion — editorial product film</option><option value="tech">Gadget — futuristic tech launch</option><option value="home">Home & Lifestyle — warm everyday story</option>
+     </select></div><button class="btn secondary" id="applyTemplate" style="width:100%;margin:0 0 15px">Terapkan template produk</button></div><p id="productTemplateNote" class="note" hidden>Template ini khusus untuk mode Promosi produk. Simpan dan pulihkan proyek tersedia untuk kedua mode.</p>
      <div class="field"><label for="projectName">Nama proyek</label><input id="projectName" placeholder="Contoh: Iklan Bawang Hitam"></div>
      <button class="btn primary" id="saveProject" style="width:100%;margin:0 0 10px">Simpan proyek</button>
      <div class="field"><label for="savedProjects">Proyek tersimpan di perangkat</label><select id="savedProjects"><option value="">Belum ada proyek tersimpan</option></select></div>
@@ -444,7 +461,7 @@ const cameraOptions=["Dolly In","Orbit Shot","Tracking Shot","Macro Focus","Slow
 let selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];
 let referencePreviewUrl=null;
 /* BEGIN LOCAL DATA VALIDATION */
-const PROJECT_VALUE_FIELDS = ["productName","category","description","usp","cta","duration","platform","language","style","mood","lighting","voice","music","extra"];
+const PROJECT_VALUE_FIELDS = ["videoMode","productName","category","description","usp","cta","duration","platform","language","style","mood","lighting","voice","music","extra"];
 const CALENDAR_STATUSES = new Set(["Belum dijadwalkan","Draft","Siap posting","Sudah posting"]);
 const isPlainRecord = value => !!value && typeof value === "object" && !Array.isArray(value);
 const boundedText = (value, limit=10000) => (typeof value === "string" || typeof value === "number") ? String(value).slice(0,limit) : "";
@@ -504,12 +521,75 @@ function renderCameraChips(){
  $("cameraChips").innerHTML=cameraOptions.map(x=>`<button type="button" class="chip ${selectedCameras.includes(x)?"active":""}" data-camera="${escapeHtml(x)}">${escapeHtml(x)}</button>`).join("");
  $("cameraChips").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{const v=b.dataset.camera;selectedCameras=selectedCameras.includes(v)?selectedCameras.filter(x=>x!==v):[...selectedCameras,v];renderCameraChips();if(typeof scheduleDraftSave==="function")scheduleDraftSave()}));
 }
-function scenePlan(duration){
+/* BEGIN VIDEO MODE LOGIC */
+function productScenePlan(duration){
  if(duration===10)return [{t:"0–2s",name:"The Hook",purpose:"Hentikan scroll dengan visual pembuka yang kuat."},{t:"2–5s",name:"Product Reveal",purpose:"Perlihatkan produk sebagai pusat cerita."},{t:"5–8s",name:"Detail & Desire",purpose:"Tampilkan tekstur, fitur, dan daya tarik utama."},{t:"8–10s",name:"Brand & CTA",purpose:"Tutup dengan hero shot dan ajakan bertindak."}];
  if(duration===20)return [{t:"0–3s",name:"The Hook",purpose:"Bangun rasa penasaran dan hentikan scroll."},{t:"3–7s",name:"Product Reveal",purpose:"Ungkap produk dengan gerakan kamera elegan."},{t:"7–12s",name:"Texture Showcase",purpose:"Tonjolkan detail, bahan, atau keunggulan."},{t:"12–16s",name:"Lifestyle / Benefit",purpose:"Hubungkan produk dengan kebutuhan audiens."},{t:"16–20s",name:"Hero Shot & CTA",purpose:"Perkuat brand recall dan arahkan tindakan."}];
  return [{t:"0–4s",name:"The Hook",purpose:"Buka dengan situasi, emosi, atau visual pemikat."},{t:"4–9s",name:"Product Reveal",purpose:"Perkenalkan produk dengan reveal sinematik."},{t:"9–15s",name:"Detail & Craft",purpose:"Perlihatkan tekstur, bahan, dan detail unggulan."},{t:"15–21s",name:"Lifestyle Demonstration",purpose:"Tampilkan produk dalam konteks penggunaan."},{t:"21–26s",name:"Brand Positioning",purpose:"Tegaskan karakter dan pesan merek."},{t:"26–30s",name:"Hero Shot & CTA",purpose:"Akhiri dengan komposisi produk dan CTA."}];
 }
+const GENERAL_VIDEO_BEATS={
+ "Tutorial & edukasi":[["Hook & tujuan","Mulai dengan pertanyaan atau hasil belajar yang jelas."],["Konteks","Berikan konteks singkat sebelum masuk ke langkah utama."],["Langkah utama","Jelaskan satu langkah atau ide dengan bahasa sederhana."],["Demonstrasi","Perlihatkan contoh penerapan yang mudah diikuti."],["Inti pembelajaran","Ringkas hal terpenting yang perlu diingat."],["Penutup","Akhiri dengan rangkuman atau ajakan non-promosi bila diminta."]],
+ "Vlog & keseharian":[["Momen pembuka","Buka dengan momen autentik yang membuat penonton ingin ikut menyimak."],["Konteks","Tunjukkan tempat, waktu, atau tujuan kegiatan."],["Aktivitas utama","Ikuti kegiatan dengan detail yang terasa natural."],["Momen tak terduga","Tambahkan perubahan kecil atau detail personal yang relevan."],["Refleksi","Bagikan pengamatan atau perasaan secara jujur."],["Penutup","Akhiri secara natural tanpa ajakan jualan."]],
+ "Storytelling":[["Cold open","Buka di momen paling menarik tanpa menjelaskan semuanya."],["Setup cerita","Kenalkan tokoh, situasi, dan apa yang dipertaruhkan."],["Titik perubahan","Hadirkan keputusan, masalah, atau penemuan yang mengubah arah cerita."],["Perkembangan","Tunjukkan respons dan konsekuensi dengan detail yang relevan."],["Resolusi","Selesaikan inti cerita secara masuk akal."],["Coda","Tutup dengan refleksi singkat yang terasa pantas."]],
+ "Explainer & dokumenter":[["Pertanyaan utama","Ajukan pertanyaan faktual yang memandu video."],["Konteks","Jelaskan latar belakang seperlunya."],["Penjelasan inti","Uraikan ide utama dengan contoh atau visual pendukung."],["Detail pendukung","Perjelas dengan bukti atau rincian yang diberikan pengguna."],["Implikasi","Tunjukkan mengapa informasi ini relevan."],["Kesimpulan","Rangkum poin utama dan tandai fakta yang perlu diverifikasi."]],
+ "Hiburan & kreatif":[["Pattern break","Buka dengan aksi atau gambar yang mematahkan pola."],["Premis","Perkenalkan gagasan kreatif secara cepat."],["Rangkaian aksi","Kembangkan gagasan lewat visual yang jelas dan menarik."],["Twist atau payoff","Berikan kejutan atau hasil yang lahir dari premis."],["Momen akhir","Biarkan hasil atau reaksi menjadi penutup utama."],["Closing","Akhiri ringkas tanpa memaksakan promosi."]],
+ "Lainnya":[["Hook","Mulai dengan pertanyaan, momen, atau pernyataan yang relevan."],["Konteks","Berikan latar agar penonton memahami topiknya."],["Gagasan utama","Kembangkan fokus video dengan satu ide yang jelas."],["Contoh atau detail","Tambahkan contoh atau detail yang tersedia dalam brief."],["Takeaway","Tarik kesimpulan yang berguna atau reflektif."],["Penutup","Akhiri secara natural dan tidak promosi."]]
+};
+const GENERAL_VIDEO_LAYOUTS={10:[["0–2s",0],["2–8s",2],["8–10s",5]],20:[["0–3s",0],["3–6s",1],["6–12s",2],["12–17s",4],["17–20s",5]],30:[["0–4s",0],["4–8s",1],["8–15s",2],["15–22s",3],["22–27s",4],["27–30s",5]]};
+function scenePlan(duration,videoMode="product",category=""){
+ if(videoMode==="general"){
+  const beats=GENERAL_VIDEO_BEATS[category]||GENERAL_VIDEO_BEATS["Lainnya"];let layout=GENERAL_VIDEO_LAYOUTS[duration]||GENERAL_VIDEO_LAYOUTS[20];
+  if(duration===20&&["Tutorial & edukasi","Hiburan & kreatif"].includes(category))layout=[["0–3s",0],["3–6s",1],["6–12s",2],["12–17s",3],["17–20s",5]];
+  return layout.map(([t,index])=>({t,name:beats[index][0],purpose:beats[index][1]}));
+ }
+ return productScenePlan(duration);
+}
+function buildGeneralScenePrompt(data,scene,index,total){
+ const isEn=data.language==="English",excluded=new Set(["Product Reveal","Hero Product Shot"]),cameras=selectedCameras.filter(camera=>!excluded.has(camera));
+ const cam=cameras.length?cameras.join(", "):"Dolly In and steady observation",camera=cameras[(index+1)%Math.max(cameras.length,1)]||"Dolly In";
+ const context=data.description?`Creator context: ${data.description}.`:"Creator context: not provided; do not invent specific facts.";
+ const points=data.usp?`Key idea or learning point: ${data.usp}.`:"Key idea: keep the video focused on one clear topic and do not invent facts.";
+ const closing=data.cta?`Creator-specified closing: ${data.cta}.`:"Close naturally with a useful takeaway; do not add a sales call to action.";
+ const extra=data.extra?`Additional direction: ${data.extra}.`:"";
+ const voice=data.voice==="Tanpa voice-over"?"No voice-over; use natural sound and visual storytelling.":`Voice-over direction: ${data.voice}.`;
+ const lighting=index===0?"Clear, inviting opening light":data.lighting;
+ if(isEn)return `GENERAL VIDEO — NON-PROMOTIONAL. Do not turn this into an advertisement.
+Topic: ${data.product}
+Video type: ${data.category}
+${context}
+${points}
+
+SCENE ${index+1}/${total} — ${scene.name} (${scene.t})
+Action: ${scene.purpose} Relate every shot to the stated topic only.
+Visual direction: ${data.style}; ${data.mood}; use a believable setting appropriate to the topic, not a staged product reveal.
+Camera: ${camera}; overall camera language: ${cam}. Use steady, intentional framing and natural movement.
+Lighting: ${lighting}; keep people, objects, and colors natural and consistent.
+Audio: ${voice} Sound design: ${data.music}.
+On-screen text: concise labels only for terms explicitly provided; no fabricated facts, quotes, or statistics.
+Continuity: keep the topic, people, wardrobe, props, and setting consistent across scenes.
+Closing: ${closing}
+Format: ${data.platform}. Target duration: ${scene.t}. ${extra}
+Restrictions: no invented product specifications, endorsements, testimonials, guarantees, or forced brand/sales CTA.`;
+ return `VIDEO UMUM — NON-PROMOSI. Jangan ubah video menjadi iklan.
+Topik: ${data.product}
+Jenis video: ${data.category}
+${context}
+${points}
+
+ADEGAN ${index+1}/${total} — ${scene.name} (${scene.t})
+Aksi: ${scene.purpose} Hubungkan setiap gambar hanya dengan topik yang disebutkan.
+Arahan visual: ${data.style}; ${data.mood}; gunakan latar yang wajar dan sesuai topik, bukan product reveal yang ditata seperti iklan.
+Kamera: ${camera}; bahasa kamera keseluruhan: ${cam}. Gunakan framing terarah dan gerakan alami.
+Pencahayaan: ${lighting}; jaga orang, objek, dan warna tetap natural dan konsisten.
+Audio: ${voice} Sound design: ${data.music}.
+Teks layar: label singkat hanya untuk istilah yang ada di brief; jangan mengarang fakta, kutipan, atau statistik.
+Kontinuitas: jaga topik, orang, pakaian, properti, dan latar konsisten di semua adegan.
+Penutup: ${closing}
+Format: ${data.platform}. Target durasi: ${scene.t}. ${extra}
+Batasan: jangan mengarang spesifikasi produk, endorsement, testimoni, jaminan hasil, atau ajakan jualan/merek yang dipaksakan.`;
+}
 function buildScenePrompt(data,scene,index,total){
+ if(data.videoMode==="general")return buildGeneralScenePrompt(data,scene,index,total);
  const isEn=data.language==="English";
  const cam=selectedCameras.length?selectedCameras.join(", "):"smooth dolly-in and controlled close-up";
  const common=`Product identity lock: ${data.product}. Use the provided reference image as the exact visual guide whenever supplied. Preserve packaging silhouette, label layout, logo, typography, brand colors, material, proportions and product details. Do not invent or alter brand elements.`;
@@ -530,16 +610,76 @@ function buildScenePrompt(data,scene,index,total){
  if(isEn)return `${common} ${details} ${benefit}\n\nSCENE ${index+1}/${total} — ${scene.name} (${scene.t})\nAction: ${action}\nEnvironment: A carefully art-directed ${data.style.toLowerCase()} commercial set appropriate for ${data.category.toLowerCase()}, with a clean, premium background and realistic materials.\nCamera: ${camera}; ${cam}. Use a deliberate ${index===0?"attention-grabbing opening composition":"commercial composition"} with controlled framing and smooth movement.\nLighting: ${light}; realistic reflections, dimensional shadows and accurate product color.\nLook & mood: ${data.style}; ${data.mood}; photorealistic, premium advertising cinematography, detailed textures, natural physics.\nContinuity: Maintain the exact same product design, scale, label, color and orientation continuity across shots. Avoid morphing, flicker, duplicate products or sudden camera jumps.\nAudio: ${voice} ${music}\nFormat: ${data.platform}. Duration target for this shot: ${scene.t}. ${extra}\nNegative instructions: no misspelled text, no invented logo, no altered packaging, no watermark, no warped geometry, no extra fingers or unrealistic hands.`;
  return `${common} ${details} ${benefit}\n\nADEGAN ${index+1}/${total} — ${scene.name} (${scene.t})\nAksi: ${action}\nLingkungan: Set iklan ${data.style.toLowerCase()} yang ditata sesuai kategori ${data.category.toLowerCase()}, dengan latar premium, material realistis, dan detail terkontrol.\nKamera: ${camera}; ${cam}. Gunakan komposisi iklan yang terencana dengan framing presisi dan gerakan halus.\nPencahayaan: ${light}; pantulan realistis, bayangan berdimensi, dan warna produk yang akurat.\nTampilan & suasana: ${data.style}; ${data.mood}; fotorealistis, sinematografi iklan premium, tekstur detail, fisika alami.\nKontinuitas: Pertahankan desain, skala, label, warna, dan orientasi produk yang sama di seluruh adegan. Hindari perubahan bentuk, flicker, produk duplikat, dan perpindahan kamera mendadak.\nAudio: ${voice} ${music}\nFormat: ${data.platform}. Target durasi adegan: ${scene.t}. ${extra}\nInstruksi negatif: tanpa teks salah eja, logo rekaan, kemasan berubah, watermark, geometri melengkung, jari tambahan, atau tangan tidak realistis.`;
 }
+function buildMasterPrompt(data,plan){
+ if(data.videoMode==="general"){
+  const cameras=selectedCameras.filter(camera=>camera!=="Product Reveal"&&camera!=="Hero Product Shot");
+  return `PAYUNG AI STUDIO — MASTER CREATIVE DIRECTION
+MODE: VIDEO UMUM (NON-PROMOSI)
+TOPIK: ${data.product}
+JENIS VIDEO: ${data.category}
+DURASI: ${data.duration} detik
+FORMAT: ${data.platform}
+BAHASA: ${data.language}
+GAYA VISUAL: ${data.style}
+MOOD: ${data.mood}
+PENCAHAYAAN: ${data.lighting}
+BAHASA KAMERA: ${cameras.join(", ")||"Gerak kamera natural dan terarah"}
+
+KONTEKS: ${data.description||"Tidak diberikan; jangan mengarang fakta."}
+POIN UTAMA: ${data.usp||"Jaga video fokus pada satu topik dan satu ide yang jelas."}
+
+ALUR CERITA:
+${plan.map(scene=>`${scene.t} — ${scene.name}: ${scene.purpose}`).join("\n")}
+
+ARAH KREATIF:
+Buat video ${data.category.toLowerCase()} yang jelas, menarik, dan sesuai topik. Gunakan contoh dan fakta hanya dari brief. Hindari struktur iklan, product reveal, klaim penjualan, serta CTA komersial. Jaga kesinambungan orang, properti, dan latar.
+
+AUDIO:
+${data.voice}. ${data.music}.
+
+PENUTUP:
+${data.cta||"Rangkum takeaway dengan natural; tidak perlu ajakan jualan."}
+ARAHAN TAMBAHAN: ${data.extra||"Tidak ada"}
+
+OUTPUT: Storyboard teks dan prompt per adegan berdurasi ${data.duration} detik untuk ${data.platform}. Aplikasi ini tidak merender file video. Jangan membuat fakta, kutipan, statistik, atau klaim yang tidak ada di brief.`;
+ }
+ const duration=data.duration;
+ return `PAYUNG AI STUDIO — MASTER CREATIVE DIRECTION\n\nPROJECT: ${data.product}\nCATEGORY: ${data.category}\nDURATION: ${duration} seconds\nFORMAT: ${data.platform}\nVISUAL STYLE: ${data.style}\nMOOD: ${data.mood}\nLIGHTING: ${data.lighting}\nCAMERA LANGUAGE: ${selectedCameras.join(", ")||"Smooth cinematic camera movement"}\n\nPRODUCT CONSISTENCY LOCK:\nUse the uploaded product reference as the source of truth. Preserve exact packaging, logo, typography, label, colors, proportions and materials. Keep the product visually consistent in every shot. Do not fabricate product claims, labels or certifications.\n\nCREATIVE STORY:\n${plan.map((scene)=>`${scene.t} — ${scene.name}: ${scene.purpose}`).join("\n")}\n\nCORE VISUAL DIRECTION:\nCreate a coherent ${data.style.toLowerCase()} commercial with realistic product materials, physically plausible movement, intentional camera work, professional lighting, detailed textures and polished color grading. Maintain continuity between every scene. Keep key product details legible and unobstructed.\n\nAUDIO:\n${data.voice}. ${data.music}.\n\nBRAND MESSAGE:\n${data.usp||"Communicate the product's defining value clearly."}\nCALL TO ACTION: ${data.cta}\nADDITIONAL NOTES: ${data.extra||"None"}\n\nDELIVERY: ${duration}-second ${data.platform} advertisement. Generate each scene as a separate clip if required by the video tool, then assemble them in order. Add final typography and exact brand text in an editor where precise lettering is required.\n\nIMPORTANT: AI video generation may not preserve exact logos or packaging perfectly. Use the original product image as a visual reference and inspect every generated frame before publishing.`;
+}
+function buildAIStoryboardPrompt(data){
+ const cameras=data.videoMode==="general"?selectedCameras.filter(camera=>camera!=="Product Reveal"&&camera!=="Hero Product Shot"):selectedCameras;
+ const brief=[
+  `Mode: ${data.videoMode==="general"?"Video umum (non-promosi)":"Promosi produk"}`,
+  `Produk/topik: ${data.product}`,
+  `Kategori/jenis video: ${data.category}`,
+  `Deskripsi/konteks: ${data.description||"Tidak diberikan; jangan mengarang"}`,
+  `Poin utama/fakta: ${data.usp||"Tidak diberikan; jangan mengarang"}`,
+  `Durasi: ${data.duration} detik`,
+  `Platform/rasio: ${data.platform}`,
+  `Bahasa: ${data.language}`,
+  `Gaya visual: ${data.style}`,
+  `Mood: ${data.mood}`,
+  `Kamera: ${cameras.join(", ")||"Tidak ditentukan"}`,
+  `Pencahayaan: ${data.lighting}`,
+  `Voice-over: ${data.voice}`,
+  `Musik: ${data.music}`,
+  `Arahan tambahan: ${data.extra||"Tidak ada"}`,
+  `CTA/penutup: ${data.cta||"Tidak ada"}`
+ ].join("\n");
+ if(data.videoMode==="general")return `Susun storyboard video umum yang non-promosi dan siap diproduksi, bukan iklan. Gunakan alur ${data.category} dan jangan menambahkan product reveal, klaim penjualan, brand placement, atau CTA jualan. Brief pengguna:\n${brief}\nBerikan judul konsep, logline, breakdown adegan bertimestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan total durasi sesuai brief. Jangan mengarang fakta, statistik, kutipan, atau spesifikasi; tandai informasi yang perlu dicek dengan [PERLU VERIFIKASI]. Akhiri dengan takeaway yang natural. Output berupa storyboard teks, bukan file video.`;
+ return `Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:\n${brief}\nBerikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
+}
+/* END VIDEO MODE LOGIC */
 function generate(){
- const product=$("productName").value.trim();if(!product){$("productName").focus();toast("Isi nama produk terlebih dahulu.");return}
- const duration=Number($("duration").value),plan=scenePlan(duration);
- const data={product,category:$("category").value,description:$("description").value.trim(),usp:$("usp").value.trim(),cta:$("cta").value.trim()||"Learn more",duration,platform:$("platform").value,language:$("language").value,style:$("style").value,mood:$("mood").value,lighting:$("lighting").value,voice:$("voice").value,music:$("music").value,extra:$("extra").value.trim()};
+ const product=$("productName").value.trim(),videoMode=$("videoMode").value==="general"?"general":"product";if(!product){$("productName").focus();toast(videoMode==="general"?"Isi topik video terlebih dahulu.":"Isi nama produk terlebih dahulu.");return}
+ const duration=Number($("duration").value),category=$("category").value,plan=scenePlan(duration,videoMode,category);
+ const data={videoMode,product,category,description:$("description").value.trim(),usp:$("usp").value.trim(),cta:videoMode==="general"?$("cta").value.trim():($("cta").value.trim()||"Learn more"),duration,platform:$("platform").value,language:$("language").value,style:$("style").value,mood:$("mood").value,lighting:$("lighting").value,voice:$("voice").value,music:$("music").value,extra:$("extra").value.trim()};
  const prompts=plan.map((s,i)=>buildScenePrompt(data,s,i,plan.length));
- const master=`PAYUNG AI STUDIO — MASTER CREATIVE DIRECTION\n\nPROJECT: ${data.product}\nCATEGORY: ${data.category}\nDURATION: ${duration} seconds\nFORMAT: ${data.platform}\nVISUAL STYLE: ${data.style}\nMOOD: ${data.mood}\nLIGHTING: ${data.lighting}\nCAMERA LANGUAGE: ${selectedCameras.join(", ")||"Smooth cinematic camera movement"}\n\nPRODUCT CONSISTENCY LOCK:\nUse the uploaded product reference as the source of truth. Preserve exact packaging, logo, typography, label, colors, proportions and materials. Keep the product visually consistent in every shot. Do not fabricate product claims, labels or certifications.\n\nCREATIVE STORY:\n${plan.map((s,i)=>`${s.t} — ${s.name}: ${s.purpose}`).join("\n")}\n\nCORE VISUAL DIRECTION:\nCreate a coherent ${data.style.toLowerCase()} commercial with realistic product materials, physically plausible movement, intentional camera work, professional lighting, detailed textures and polished color grading. Maintain continuity between every scene. Keep key product details legible and unobstructed.\n\nAUDIO:\n${data.voice}. ${data.music}.\n\nBRAND MESSAGE:\n${data.usp||"Communicate the product's defining value clearly."}\nCALL TO ACTION: ${data.cta}\nADDITIONAL NOTES: ${data.extra||"None"}\n\nDELIVERY: ${duration}-second ${data.platform} advertisement. Generate each scene as a separate clip if required by the video tool, then assemble them in order. Add final typography and exact brand text in an editor where precise lettering is required.\n\nIMPORTANT: AI video generation may not preserve exact logos or packaging perfectly. Use the original product image as a visual reference and inspect every generated frame before publishing.`;
- $("resultMeta").textContent=`${product} · ${duration} detik · ${plan.length} adegan · ${data.platform}`;
- $("sceneList").innerHTML=plan.map((s,i)=>`<article class="scene"><div class="scene-head"><div class="scene-name"><span class="scene-num">0${i+1}</span><div><strong>${escapeHtml(s.name)}</strong><small>${s.t} · ${escapeHtml(s.purpose)}</small></div></div><button class="copy-small" data-copy-scene="${i}">Copy prompt</button></div><div class="scene-body"><div class="scene-block"><h4>Visual direction</h4><p>${escapeHtml(s.purpose)} ${escapeHtml(data.style)} · ${escapeHtml(data.mood)}</p></div><div class="scene-block"><h4>Camera & lighting</h4><p>${escapeHtml(selectedCameras.join(", ")||"Smooth cinematic movement")} \n${escapeHtml(data.lighting)}</p></div><div class="scene-block prompt-box"><h4>Prompt siap digunakan</h4><p class="prompt-text">${escapeHtml(prompts[i])}</p></div></div></article>`).join("");
+ const master=buildMasterPrompt(data,plan);
+ $("resultMeta").textContent=`${videoMode==="general"?"Video umum":"Promosi produk"} · ${product} · ${duration} detik · ${plan.length} adegan · ${data.platform}`;
+ $("sceneList").innerHTML=plan.map((s,i)=>`<article class="scene"><div class="scene-head"><div class="scene-name"><span class="scene-num">0${i+1}</span><div><strong>${escapeHtml(s.name)}</strong><small>${s.t} · ${escapeHtml(s.purpose)}</small></div></div><button class="copy-small" data-copy-scene="${i}">Copy prompt</button></div><div class="scene-body"><div class="scene-block"><h4>Visual direction</h4><p>${escapeHtml(s.purpose)} ${escapeHtml(data.style)} · ${escapeHtml(data.mood)}</p></div><div class="scene-block"><h4>Camera & lighting</h4><p>${escapeHtml((videoMode==="general"?selectedCameras.filter(camera=>camera!=="Product Reveal"&&camera!=="Hero Product Shot"):selectedCameras).join(", ")||"Smooth cinematic movement")} \n${escapeHtml(data.lighting)}</p></div><div class="scene-block prompt-box"><h4>Prompt siap digunakan</h4><p class="prompt-text">${escapeHtml(prompts[i])}</p></div></div></article>`).join("");
  $("masterPrompt").textContent=master;
- lastOutput=`PAYUNG AI STUDIO — STORYBOARD\n${data.product}\n${duration} detik | ${data.platform}\n\n`+plan.map((s,i)=>`==============================\n${s.t} — ${s.name}\n${s.purpose}\n\n${prompts[i]}`).join("\n\n")+"\n\n==============================\n"+master;
+ lastOutput=`PAYUNG AI STUDIO — STORYBOARD\n${videoMode==="general"?"VIDEO UMUM":"PROMOSI PRODUK"} — ${data.product}\n${duration} detik | ${data.platform}\n\n`+plan.map((s,i)=>`==============================\n${s.t} — ${s.name}\n${s.purpose}\n\n${prompts[i]}`).join("\n\n")+"\n\n==============================\n"+master;
  $("results").style.display="block";$("results").scrollIntoView({behavior:"smooth",block:"start"});
  $("sceneList").querySelectorAll("[data-copy-scene]").forEach(b=>b.addEventListener("click",()=>copyText(prompts[Number(b.dataset.copyScene)])));
 }
@@ -555,9 +695,41 @@ function renderTech(){
  const items=techniques.filter(x=>(cat==="all"||x[0]===cat)&&(x[1]+" "+x[2]+" "+x[0]).toLowerCase().includes(q));
  $("techList").innerHTML=items.map((x)=>`<div class="tech-item"><b>${escapeHtml(x[1])}</b><span>${escapeHtml(x[2])}</span></div>`).join("")||'<div class="empty" style="grid-column:1/-1">Teknik tidak ditemukan.</div>';
 }
+function updateVideoModeUI(){
+ const mode=$("videoMode").value==="general"?"general":"product",isProduct=mode==="product";
+ $("videoMode").value=mode;
+ document.querySelectorAll('input[name="videoModeChoice"]').forEach(choice=>{const active=choice.value===mode;choice.checked=active;choice.closest(".mode-card")?.classList.toggle("selected",active)});
+  $("productTemplateControls").hidden=!isProduct;$("productTemplateNote").hidden=isProduct;
+  const groups=$("category").querySelectorAll("optgroup[data-video-mode]");let activeGroup=null;
+ groups.forEach(group=>{group.hidden=group.dataset.videoMode!==mode;if(!group.hidden)activeGroup=group});
+ const selectedGroup=$("category").selectedOptions[0]?.parentElement;
+ if(selectedGroup!==activeGroup&&activeGroup){$("category").value=activeGroup.querySelector("option")?.value||""}
+ $("topicLabel").textContent=isProduct?"Nama produk / merek *":"Topik / fokus video *";
+ $("productName").placeholder=isProduct?"Contoh: Bawang Hitam Premium":"Contoh: Cara menyeduh kopi dengan V60";
+ $("categoryLabel").textContent=isProduct?"Kategori produk":"Jenis video";
+ $("descriptionLabel").textContent=isProduct?"Deskripsi singkat produk":"Konteks / garis besar topik";
+ $("description").placeholder=isProduct?"Jelaskan bentuk, bahan, kemasan, karakter, atau keunikan produk...":"Jelaskan situasi, latar, atau konteks yang perlu diketahui penonton...";
+ $("uspLabel").textContent=isProduct?"Keunggulan / pesan utama":"Poin utama / hal yang perlu dipelajari";
+ $("usp").placeholder=isProduct?"Contoh: rasa khas, kemasan praktis":"Contoh: tiga langkah dasar, satu ide utama, atau refleksi";
+ $("ctaLabel").textContent=isProduct?"Call to action":"Penutup / ajakan opsional";
+ $("durationLabel").textContent=isProduct?"Durasi iklan":"Durasi video";
+ if(isProduct&&!$("cta").value.trim())$("cta").value="Pesan sekarang";
+ if(!isProduct&&$("cta").value.trim()==="Pesan sekarang")$("cta").value="";
+ $("cta").placeholder=isProduct?"Contoh: Pesan sekarang":"Contoh: Coba langkah ini atau ikuti cerita berikutnya";
+ $("generatorTitle").textContent=isProduct?"Bangun iklan cinematic Anda":"Bangun video cinematic Anda";
+ $("generatorIntro").textContent=isProduct?"Isi informasi inti. Pengaturan visual lainnya dapat dibuka bila diperlukan.":"Isi topik dan tujuan video. Arahan visual lainnya dapat dibuka bila diperlukan.";
+ $("referenceLabel").textContent=isProduct?"Foto referensi produk (opsional)":"Foto referensi visual (opsional)";
+ $("referenceUploadText").textContent=isProduct?"Unggah foto untuk panduan visual saat menyusun prompt.":"Unggah foto sebagai referensi visual lokal untuk brief Anda.";
+ $("referenceHint").textContent="Foto hanya dipratinjau secara lokal. Tidak dikirim ke server atau provider AI.";
+ $("reference").setAttribute("aria-label",isProduct?"Foto referensi produk":"Foto referensi visual");
+ $("extra").placeholder=isProduct?"Contoh: tampilkan bahan alami, jangan tampilkan manusia, pertahankan warna kemasan...":"Contoh: gunakan sudut pandang orang pertama, hindari klaim yang tidak didukung...";
+ updateSummary();
+}
 function updateSummary(){
+ const mode=$("videoMode").value==="general"?"general":"product";
+ $("sumMode").textContent=mode==="general"?"Video umum":"Promosi produk";
  $("sumDuration").textContent=$("duration").value+" detik";
- $("sumScenes").textContent=scenePlan(Number($("duration").value)).length+" adegan";
+ $("sumScenes").textContent=scenePlan(Number($("duration").value),mode,$("category").value).length+" adegan";
  $("sumRatio").textContent=$("platform").value.includes("9:16")?"9:16":$("platform").value.includes("16:9")?"16:9":$("platform").value.includes("4:5")?"4:5":"1:1";
 }
 // PAYUNG AI STUDIO 2.1 FINAL — templates, local project storage, autosave and portable backup
@@ -633,20 +805,21 @@ function refreshProjectList(selected=""){
  if(selected&&store[selected])$("savedProjects").value=selected;
 }
 function captureProject(){
- const ids=["productName","category","description","usp","cta","duration","platform","language","style","mood","lighting","voice","music","extra"],values={};
+ const ids=["videoMode","productName","category","description","usp","cta","duration","platform","language","style","mood","lighting","voice","music","extra"],values={};
  ids.forEach(id=>values[id]=$(id).value);
  return {values,cameras:[...selectedCameras],output:lastOutput,savedAt:Date.now()};
 }
 function applyProject(project){
  const safeProject=normalizeProjectRecord(project);if(!safeProject)return;
+ $("videoMode").value=safeProject.values.videoMode==="general"?"general":"product";updateVideoModeUI();
  Object.entries(safeProject.values).forEach(([id,value])=>{if($(id))$(id).value=value});
- selectedCameras=safeProject.cameras;renderCameraChips();updateSummary();
+ updateVideoModeUI();selectedCameras=safeProject.cameras;renderCameraChips();updateSummary();
  if(safeProject.output)lastOutput=safeProject.output;
  toast("Proyek berhasil dimuat. Tekan Buat storyboard untuk membuat ulang.");
 }
 $("applyTemplate").addEventListener("click",()=>{
  const key=$("adTemplate").value,preset=templatePresets[key];if(!preset){toast("Pilih template terlebih dahulu.");return}
- Object.entries(preset).forEach(([id,value])=>{if($(id))$(id).value=value});
+ $("videoMode").value="product";updateVideoModeUI();Object.entries(preset).forEach(([id,value])=>{if($(id))$(id).value=value});
  if(!$("productName").value.trim())$("productName").value={food:"Produk Makanan",beauty:"Produk Skincare",fashion:"Produk Fashion",tech:"Produk Gadget",home:"Produk Rumah Tangga"}[key];
  selectedCameras={food:["Macro Focus","Slow Motion","Dolly In","Product Reveal"],beauty:["Macro Focus","Rack Focus","Dolly In","Hero Product Shot"],fashion:["Tracking Shot","Slow Motion","Orbit Shot","Close-up"],tech:["Orbit Shot","Crane Up","Macro Focus","Product Reveal"],home:["Tracking Shot","Golden Hour","Close-up","Dolly In"]}[key];
  renderCameraChips();updateSummary();persistDraft();toast("Template diterapkan. Sesuaikan nama dan detail produk.");
@@ -670,9 +843,9 @@ function restoreDraft(){
 }
 function clearGeneratorDraft(){
  clearTimeout(draftTimer);if(referencePreviewUrl){URL.revokeObjectURL(referencePreviewUrl);referencePreviewUrl=null;}document.querySelectorAll("#generator input:not([type=file]),#generator textarea").forEach(el=>el.value="");
- $("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;
+ $("videoMode").value="product";$("cta").value="Pesan sekarang";$("duration").value="20";$("category").selectedIndex=0;$("platform").selectedIndex=0;$("language").selectedIndex=0;$("style").selectedIndex=0;$("mood").selectedIndex=0;$("lighting").selectedIndex=0;$("voice").selectedIndex=0;$("music").selectedIndex=0;
  $("reference").value="";$("preview").removeAttribute("src");$("preview").style.display="none";$("projectName").value="";$("results").style.display="none";$("aiStoryboardOutput").textContent="Storyboard versi AI Cloud akan muncul di sini.";lastOutput="";
- selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];renderCameraChips();updateSummary();
+ selectedCameras=["Dolly In","Orbit Shot","Macro Focus","Slow Motion","Product Reveal"];updateVideoModeUI();renderCameraChips();updateSummary();
 }
 function scheduleDraftSave(){clearTimeout(draftTimer);draftTimer=setTimeout(persistDraft,350);}
 function downloadJson(filename,data){
@@ -707,7 +880,7 @@ document.querySelectorAll("#generator input:not([type=file]),#generator select,#
  el.addEventListener("input",scheduleDraftSave);el.addEventListener("change",scheduleDraftSave);
 });
 $("generate").addEventListener("click",()=>{generate();persistDraft();});
-$("duration").addEventListener("change",updateSummary);$("platform").addEventListener("change",updateSummary);
+document.querySelectorAll('input[name="videoModeChoice"]').forEach(choice=>choice.addEventListener("change",()=>{if(!choice.checked)return;$("videoMode").value=choice.value;$("videoMode").dispatchEvent(new Event("change",{bubbles:true}))}));$("videoMode").addEventListener("change",()=>{updateVideoModeUI();scheduleDraftSave()});$("duration").addEventListener("change",updateSummary);$("platform").addEventListener("change",updateSummary);$("category").addEventListener("change",updateSummary);
 $("copyAll").addEventListener("click",()=>copyText(lastOutput));
 $("copyMaster").addEventListener("click",()=>copyText($("masterPrompt").textContent));
 $("download").addEventListener("click",()=>{if(!lastOutput)return;const blob=new Blob([lastOutput],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="payung-ai-studio-storyboard.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
@@ -1091,27 +1264,10 @@ async function payungGenerateAI(action,prompt,buttonId="makeSocialAI"){
  finally{payungAiRequestInFlight=false;if(button){button.disabled=false;button.textContent=originalLabel}}
 }
 $("generateAIStoryboard").addEventListener("click",async()=>{
- const product=$("productName").value.trim();if(!product){toast("Isi nama produk pada brief cinematic terlebih dahulu.");return}
- const brief=[
-  `Produk: ${$("productName").value.trim()}`,
-  `Kategori: ${$("category").value}`,
-  `Deskripsi: ${$("description").value.trim()||"Tidak diberikan"}`,
-  `Keunggulan/fakta: ${$("usp").value.trim()||"Tidak diberikan; jangan mengarang"}`,
-  `Durasi: ${$("duration").value} detik`,
-  `Platform/rasio: ${$("platform").value}`,
-  `Bahasa: ${$("language").value}`,
-  `Gaya visual: ${$("style").value}`,
-  `Mood: ${$("mood").value}`,
-  `Kamera: ${selectedCameras.join(", ")||"Tidak ditentukan"}`,
-  `Pencahayaan: ${$("lighting").value}`,
-  `Voice-over: ${$("voice").value}`,
-  `Musik: ${$("music").value}`,
-  `Arahan tambahan: ${$("extra").value.trim()||"Tidak ada"}`,
-  `CTA: ${$("cta").value.trim()||"Pesan sekarang"}`
- ].join("\n");
- const prompt=`Susun storyboard iklan komersial cinematic yang siap diproduksi. Brief pengguna:
-${brief}
-Berikan judul konsep, logline, breakdown adegan dengan timestamp, visual/action, gerak kamera, pencahayaan, sound design, voice-over, teks layar, dan prompt video per adegan. Pastikan durasi total sesuai brief. Jangan mengarang fakta produk; gunakan [PERLU VERIFIKASI] jika data tidak tersedia.`;
+ const videoMode=$("videoMode").value==="general"?"general":"product",product=$("productName").value.trim();
+ if(!product){$("productName").focus();toast(videoMode==="general"?"Isi topik video terlebih dahulu.":"Isi nama produk terlebih dahulu.");return}
+ const data={videoMode,product,category:$("category").value,description:$("description").value.trim(),usp:$("usp").value.trim(),cta:videoMode==="general"?$("cta").value.trim():($("cta").value.trim()||"Pesan sekarang"),duration:Number($("duration").value),platform:$("platform").value,language:$("language").value,style:$("style").value,mood:$("mood").value,lighting:$("lighting").value,voice:$("voice").value,music:$("music").value,extra:$("extra").value.trim()};
+ const prompt=buildAIStoryboardPrompt(data);
  const output=await payungGenerateAI("storyboard",prompt,"generateAIStoryboard");
  if(output){$("aiStoryboardOutput").textContent=output;toast("Storyboard AI Cloud berhasil dibuat.")}
 });
@@ -1139,7 +1295,7 @@ Buat: 3 alternatif hook, script video 20 detik dengan timestamp dan arahan visua
 payungAuthInit();
 
 $("year").textContent=new Date().getFullYear();
-renderCameraChips();renderLibrary();updateSummary();
+updateVideoModeUI();renderCameraChips();renderLibrary();updateSummary();
 </script>
 </body>
 </html>
