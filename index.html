@@ -204,16 +204,17 @@ header{background:rgba(11,13,20,.94)}
 .mode-fieldset{border:0;margin:0 0 18px;padding:0;min-width:0}
 .mode-fieldset legend{font-size:12px;color:#cbd3e2;font-weight:700;padding:0 0 8px}
 .mode-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.mode-card{position:relative;display:block;min-width:0;border:1px solid #303a50;border-radius:12px;background:#0d1220;padding:13px 14px;cursor:pointer;transition:background-color .15s,border-color .15s}
-.mode-card input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.mode-card{position:relative;display:block;min-width:0;border:1px solid #303a50;border-radius:12px;background:#0d1220;padding:13px 14px 13px 42px;cursor:pointer;transition:background-color .15s,border-color .15s}
+.mode-card input{position:absolute;left:13px;top:13px;width:17px;height:17px;opacity:1;pointer-events:auto;accent-color:var(--accent2);cursor:pointer}
 .mode-card-title{display:block;font-size:14px;color:var(--text);font-weight:800;margin-bottom:4px}
 .mode-card-copy{display:block;color:var(--muted);font-size:11px;line-height:1.4}
-.mode-card.selected{border-color:var(--accent2);background:rgba(110,231,216,.08)}
+.mode-card.selected{border-color:var(--accent2);background:rgba(110,231,216,.13);box-shadow:0 0 0 2px rgba(110,231,216,.16)}
 .mode-card:focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+.mode-status{margin:10px 0 0;padding:10px 12px;border:1px solid rgba(110,231,216,.28);border-radius:9px;background:rgba(110,231,216,.07);color:#d8fff9;font-size:12px;line-height:1.45;font-weight:600}
 .generate-methods{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:16px 0 8px}
 .generate-methods strong{font-size:12px}
 .generate-methods span{font-size:11px;color:var(--muted)}
-@media(max-width:600px){.mode-choices{gap:8px}.mode-card{padding:11px}.mode-card-title{font-size:13px}.generate-methods{display:block}.generate-methods span{display:block}}
+@media(max-width:600px){.mode-choices{gap:8px}.mode-card{padding:11px 9px 11px 34px}.mode-card input{left:10px;top:12px;width:15px;height:15px}.mode-card-title{font-size:13px}.generate-methods{display:block}.generate-methods span{display:block}}
 :focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
 #generator,#results,#content-engine,#calendar,#vault,#library,#account{scroll-margin-top:86px}
 @media(max-width:700px){
@@ -290,7 +291,15 @@ header{background:rgba(11,13,20,.94)}
    <div class="panel form-panel">
     <div class="form-section">
      <h3><span class="step">01</span> Brief video</h3>
-     <fieldset class="mode-fieldset"><legend>Jenis video</legend><div class="mode-choices"><label class="mode-card selected" id="modeProductCard"><input type="radio" name="videoModeChoice" id="modeProduct" value="product" checked><span class="mode-card-title">Promosi produk</span><span class="mode-card-copy">Sorot produk, manfaat, dan ajakan.</span></label><label class="mode-card" id="modeGeneralCard"><input type="radio" name="videoModeChoice" id="modeGeneral" value="general"><span class="mode-card-title">Video umum</span><span class="mode-card-copy">Tutorial, vlog, atau cerita tanpa CTA jualan.</span></label></div><select id="videoMode" hidden aria-hidden="true" tabindex="-1"><option value="product">Promosi produk</option><option value="general">Video umum</option></select></fieldset>
+     <fieldset class="mode-fieldset">
+      <legend>Jenis video</legend>
+      <div class="mode-choices">
+       <label class="mode-card selected" id="modeProductCard"><input type="radio" name="videoModeChoice" id="modeProduct" value="product" checked><span class="mode-card-title">Promosi produk</span><span class="mode-card-copy">Sorot produk, manfaat, dan ajakan.</span></label>
+       <label class="mode-card" id="modeGeneralCard"><input type="radio" name="videoModeChoice" id="modeGeneral" value="general"><span class="mode-card-title">Video umum</span><span class="mode-card-copy">Tutorial, vlog, atau cerita tanpa CTA jualan.</span></label>
+      </div>
+      <p class="mode-status" id="modeStatus" role="status" aria-live="polite">Mode aktif: Promosi produk. Isi nama produk, keunggulan, dan ajakan.</p>
+      <select id="videoMode" hidden aria-hidden="true" tabindex="-1"><option value="product">Promosi produk</option><option value="general">Video umum</option></select>
+     </fieldset>
      <div class="grid2">
       <div class="field"><label for="productName" id="topicLabel">Nama produk / merek *</label><input id="productName" placeholder="Contoh: Bawang Hitam Premium"></div>
       <div class="field"><label for="category" id="categoryLabel">Kategori produk</label><select id="category">
@@ -716,6 +725,7 @@ function updateVideoModeUI(){
  if(isProduct&&!$("cta").value.trim())$("cta").value="Pesan sekarang";
  if(!isProduct&&$("cta").value.trim()==="Pesan sekarang")$("cta").value="";
  $("cta").placeholder=isProduct?"Contoh: Pesan sekarang":"Contoh: Coba langkah ini atau ikuti cerita berikutnya";
+ $("modeStatus").textContent=isProduct?"Mode aktif: Promosi produk. Isi nama produk, keunggulan, dan ajakan.":"Mode aktif: Video umum. Isi topik dan tujuan; storyboard tanpa promosi atau CTA jualan otomatis.";
  $("generatorTitle").textContent=isProduct?"Bangun iklan cinematic Anda":"Bangun video cinematic Anda";
  $("generatorIntro").textContent=isProduct?"Isi informasi inti. Pengaturan visual lainnya dapat dibuka bila diperlukan.":"Isi topik dan tujuan video. Arahan visual lainnya dapat dibuka bila diperlukan.";
  $("referenceLabel").textContent=isProduct?"Foto referensi produk (opsional)":"Foto referensi visual (opsional)";
@@ -880,7 +890,20 @@ document.querySelectorAll("#generator input:not([type=file]),#generator select,#
  el.addEventListener("input",scheduleDraftSave);el.addEventListener("change",scheduleDraftSave);
 });
 $("generate").addEventListener("click",()=>{generate();persistDraft();});
-document.querySelectorAll('input[name="videoModeChoice"]').forEach(choice=>choice.addEventListener("change",()=>{if(!choice.checked)return;$("videoMode").value=choice.value;$("videoMode").dispatchEvent(new Event("change",{bubbles:true}))}));$("videoMode").addEventListener("change",()=>{updateVideoModeUI();scheduleDraftSave()});$("duration").addEventListener("change",updateSummary);$("platform").addEventListener("change",updateSummary);$("category").addEventListener("change",updateSummary);
+document.querySelectorAll('input[name="videoModeChoice"]').forEach(choice=>choice.addEventListener("change",()=>{
+ if(!choice.checked||$("videoMode").value===choice.value)return;
+ $("videoMode").value=choice.value;
+ $("videoMode").dispatchEvent(new Event("change",{bubbles:true}));
+}));
+document.querySelectorAll(".mode-card").forEach(card=>card.addEventListener("click",()=>{
+ const choice=card.querySelector('input[name="videoModeChoice"]');
+ if(!choice)return;
+ choice.checked=true;
+ if($("videoMode").value===choice.value)return;
+ $("videoMode").value=choice.value;
+ $("videoMode").dispatchEvent(new Event("change",{bubbles:true}));
+}));
+$("videoMode").addEventListener("change",()=>{updateVideoModeUI();scheduleDraftSave()});$("duration").addEventListener("change",updateSummary);$("platform").addEventListener("change",updateSummary);$("category").addEventListener("change",updateSummary);
 $("copyAll").addEventListener("click",()=>copyText(lastOutput));
 $("copyMaster").addEventListener("click",()=>copyText($("masterPrompt").textContent));
 $("download").addEventListener("click",()=>{if(!lastOutput)return;const blob=new Blob([lastOutput],{type:"text/plain;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="payung-ai-studio-storyboard.txt";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
